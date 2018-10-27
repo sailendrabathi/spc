@@ -119,14 +119,17 @@ class FileUpdate(UpdateView):
         file.save()
         return redirect('webclient:detail', folder_id=file.folder_id)
 
-class FileDelete(DeleteView):
-    def dispatch(self, request, *args, **kwargs):
-        # here you can make your custom validation for any particular user
-        if not request.user.is_authenticated:
-            return render(self.request , 'webclient/login.html')
-        return super().dispatch(request, *args, **kwargs)
-    model = File
-    success_url = reverse_lazy('webclient:index')
+def FileDelete(request , pk):
+    if not request.user.is_authenticated:
+        return render(request, 'webclient/login.html')
+    file=File.objects.select_related().filter(pk=pk)
+    file.delete()
+    all_folder1 = Folder.objects.select_related().filter(user=request.user.id)
+    all_folder = all_folder1.first()
+    folder_id = all_folder.id
+    all_folders = Folder.objects.select_related().filter(folder=all_folder.id)
+    context = {'folder_id': folder_id, 'all_folders': all_folders}
+    return render(request, 'webclient/index.html', context)
 
 class UserFormView(View):
     form_class = UserForm
@@ -214,8 +217,13 @@ class loginapi(APIView):
             return Response([{"status":"successful"}])
         return Response([{"status":"not successful"}])
 
+class logoutapi(APIView):
+    def post(self,request):
+        logout(request)
+        return Response([{"status":"succesfully logged-out"}])
+
 class fileuploadapi(APIView):
-    def post(selfself,request):
+    def post(self,request):
         folder = request.data["folder"]
         name = request.data["name"]
         file = request.data["file"]
@@ -228,3 +236,31 @@ class fileuploadapi(APIView):
         f.media_file.save(os.path.basename(up_file1.name),up_file,save=True)
         f.save()
         return Response([{"status":"successful"}])
+
+def UF(folder,id,name,user):
+    fold = Folder(user=user,folder=Folder.objects.select_related().filter(pk=id).first(),name=name)
+    fold.save()
+    list = os.listdir(folder)
+    for element in list:
+        if os.path.isfile(folder+element):
+            up_file1 = open(folder+element,"wb+")
+            up_file = file1(up_file1)
+            f=File()
+            f.name = element
+            f.folder=fold
+            f.media_file.save(os.path.basename(up_file1.name),up_file,save=True)
+            f.save()
+        elif os.path.isdir(folder+element):
+            UF(folder+element,fold.id,element,user)
+        else:
+            fold1 = Folder(user=user, folder=Folder.objects.select_related().filter(pk=fold.id).first(), name=element)
+            fold1.save()
+    return([{"status":"uploaded successfully"}])
+
+class folderuploadapi(APIView):
+    def post(self,request):
+        folder = request.data["folder"]
+        name = request.data["name"]
+        ftu = request.data["ftu"]
+        UF(ftu,folder,name,request.user)
+        return Response([{"status":"Uploaded Successfully"}])

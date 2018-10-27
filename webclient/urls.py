@@ -18,6 +18,6 @@ urlpatterns= [
     url(r'file/(?P<pk>[0-9]+)/$', views.FileUpdate.as_view(), name="file_update"),
     url(r'folder/(?P<pk>[0-9]+)/delete/$', views.delete_folder, name="folder_delete"),
     # url(r'ofile/(?P<pk>[0-9]+)/delete/$',views.OFileDelete.as_view(),name="ofile_delete"),
-    url(r'file/(?P<pk>[0-9]+)/delete/$', views.FileDelete.as_view(), name="file_delete"),
+    url(r'file/(?P<pk>[0-9]+)/delete/$', views.FileDelete, name="file_delete"),
     url(r'^logout_user/$', views.logout_user, name='logout_user'),
 ]

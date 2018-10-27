@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^apiregister/',views.register.as_view(),name='api_register'),
     url(r'^apilogin/',views.loginapi.as_view(),name='api_login'),
     url(r'^fileuploadapi/',views.fileuploadapi.as_view(),name='api_file'),
+    url(r'folderuploadapi/',views.folderuploadapi.as_view(),name='folderuploadapi'),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 if settings.DEBUG:
