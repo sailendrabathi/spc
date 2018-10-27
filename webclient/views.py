@@ -187,40 +187,47 @@ def logout_user(request):
     return render(request, 'webclient/login.html', context)
 
 class register(APIView):
-    # permission_classes = (permissions.AllowAny,)
-    def get(self,request):
-        folder = Folder.objects.all()
-        serializer = FolderSerializer(folder, many=True)
-        return Response(serializer.data)
-
     def post(self,request,*args,**kwargs):
-        username = request.POST.get('username')
-        passwd = request.POST.get('password')
-        email = request.POST.get('email')
+        username = request.data["username"]
+        passwd = request.data["password"]
+        email = request.POST.data["email"]
         user = User.objects.create_user(username,email,passwd)
-        user.first_name = "fn"
-        user.last_name = "ln"
         user.save()
-        folder = Folder.objects.select_related().filter(user = user.id)
-        serializer = FolderSerializer(folder,many = True)
-        return Response(serializer.data)
+        login(request,user)
+        f = Folder(name="root", user=request.user)
+        f.save()
+        return Response([{"status": "successful"}])
 
-class loginapi(APIView):
-
+class authapi(APIView):
     def post(self,request,*args):
         username = request.data["username"]
         password = request.data["password"]
         user = authenticate(username=username, password=password)
         if user is not None:
-            folder = Folder.objects.select_related().filter(user=user.id)
-            serializer = FolderSerializer(folder, many=True)
-            return Response([{"status":"successful"}])
+            if user.is_active:
+                return Response([{"status": "successful"}])
+            else:
+                return Response([{"status": "account deleted"}])
+        return Response([{"status": "not successful"}])
+
+
+class loginapi(APIView):
+    def post(self,request,*args):
+        username = request.data["username"]
+        password = request.data["password"]
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                return Response([{"status":"successful"}])
+            else:
+                return Response([{"status":"account deleted"}])
         return Response([{"status":"not successful"}])
 
 class logoutapi(APIView):
     def post(self,request):
         logout(request)
-        return Response([{"status":"succesfully logged-out"}])
+        return Response([{"status":"successful"}])
 
 class fileuploadapi(APIView):
     def post(self,request):
@@ -255,7 +262,7 @@ def UF(folder,id,name,user):
         else:
             fold1 = Folder(user=user, folder=Folder.objects.select_related().filter(pk=fold.id).first(), name=element)
             fold1.save()
-    return([{"status":"uploaded successfully"}])
+    return [{"status":"successful"}]
 
 class folderuploadapi(APIView):
     def post(self,request):
@@ -263,4 +270,4 @@ class folderuploadapi(APIView):
         name = request.data["name"]
         ftu = request.data["ftu"]
         UF(ftu,folder,name,request.user)
-        return Response([{"status":"Uploaded Successfully"}])
+        return Response([{"status":"successful"}])

@@ -29,6 +29,8 @@ urlpatterns = [
     url(r'^files/', include('db_file_storage.urls')),
     url(r'^apiregister/',views.register.as_view(),name='api_register'),
     url(r'^apilogin/',views.loginapi.as_view(),name='api_login'),
+    url(r'^apiauth/',views.authapi.as_view(),name='api_auth'),
+    url(r'^apilogout/',views.logoutapi.as_view(),name="api_logout"),
     url(r'^fileuploadapi/',views.fileuploadapi.as_view(),name='api_file'),
     url(r'folderuploadapi/',views.folderuploadapi.as_view(),name='folderuploadapi'),
 ]
