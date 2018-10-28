@@ -13,6 +13,11 @@ parser.add_argument("--delete_file", action='store_true')
 parser.add_argument("--delete_folder", action='store_true')
 parser.add_argument("--sync", action='store_true')
 parser.add_argument("--show_data", action='store_true')
+parser.add_argument("--config", action='store_true')
+parser.add_argument("--observe", action='store_true')
+parser.add_argument("--version", action='store_true')
+parser.add_argument("--server", action='store_true')
+parser.add_argument("--help", action='store_true')
 args = parser.parse_args()
 
 apiauth = "http://127.0.0.1:8000/apiauth/"
@@ -27,6 +32,9 @@ apisync = "http://127.0.0.1:8000/apisync/"
 apishowdata = "http://127.0.0.1:8000/apishowdata/"
 s = requests.session()	 #add session time also(to be done in django and delete user.txt or write to null)
 
+dir_path = ""
+ver = ""
+ip = "127.0.0.1:8000"
 
 def checkauth(file):
 	with open(file, 'r') as f1:
@@ -74,16 +82,42 @@ if args.signup:
 				print("invalid email format")
 			else:
 				passwd = getpass.getpass("password: ")
-				r = s.post(apiregister, data={'username':user, 'email':email, 'password':passwd})
-				j = r.json()
-				if j[0]["status"] == "successful":
-					print("signup successful")
+				passwd1 = getpass.getpass("confirm password: ")
+				if passwd == passwd1:
+					r = s.post(apiregister, data={'username':user, 'email':email, 'password':passwd})
+					j = r.json()
+					if j[0]["status"] == "successful":
+						print("signup successful")
+					else:
+						print("signup failed, try again")
 				else:
-					print("signup failed, try again")
+					print("passwords did not match, try again")
 		else:
 			print("invalid email format")
 	else:
 		print("invalid email format")
+
+if args.config:
+	user = input("username: ")
+	passwd = getpass.getpass("password: ")
+	passwd1 = getpass.getpass("confirm password: ")
+	if passwd == passwd1:
+		f = open("user.txt", 'w')
+		f.write(user + '\n' + passwd)
+	else:
+		print("passwords did not match, try again")
+
+if args.observe:
+	dir_path = input("enter directory path: ")
+
+if args.verion:
+	print(ver)
+
+if args.server:
+	address = ip.split(":")[0]
+	port = ip.split(":")[1]
+	print("address:", address)
+	print("port:", port)
 
 if args.login:
 	user = input("username: ")
@@ -162,6 +196,8 @@ if args.sync:
 if args.show_data:
 	print("not implemented")
 
+if args.help:
+	print("not implemented")
 
 #user = input("user :")
 #passwd = input("pass: ")

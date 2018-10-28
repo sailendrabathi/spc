@@ -1,0 +1,35 @@
+
+Problem 1
+-------------------------
+ Dijkstra and Cable Cars
+-------------------------
+
+Buildings in Rotterdam numbered from 1 to N are connected via M cables with associated costs C_1,C_2,...,C_M and there is only one car in the city which can run over these cables in both the directions. One day K posts with destinations D_1,D_2,...,D_K arrive in Rotterdam at a building S. The car can carry at most one post at a time and is initially located at some building T. The car when loaded incurs cost C_i while travelling over the cable i but costs zero when empty. 
+
+You have to find the minimum cost incurred while delivering maximum number of posts.
+
+Note : There can be multiple cables between two buildings and some buildings may not be reachable from S.
+Beware of overflows (Use long long instead of int).
+
+Input Format:
+-------------
+First line contains 3 integers N, M and K.
+The next M lines contain 3 integers U_i, V_i and C_i each denoting the two ends and cost of the cable i.
+Next line has K integers D_1,D_2,...,D_K specifying the destinations of posts.  
+Last line contains 2 integers S and T.
+
+Output Format:
+--------------
+Output a single integer denoting the minimum cost incurred as specified in the problem statement.
+
+Constraints:
+------------
+2 <= N <= 10^4
+1 <= M <= 10^5
+0 <= K <= 10^6
+
+0 <= C_i <= 10^4
+1 <= D_i,U_i,V_i,S,T <= N
+
+File to be submitted : p1.cpp
+----------------------
