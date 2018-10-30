@@ -31,5 +31,6 @@ class File(models.Model) :
         super(File, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        super(File, self).delete(*args, **kwargs)
         delete_file(self, 'media_file')
+        super(File, self).delete(*args, **kwargs)
+

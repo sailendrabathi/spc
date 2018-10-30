@@ -82,9 +82,10 @@ def delete_folder(request, folder_id):
         return render(request, 'webclient/login.html')
     folder = Folder.objects.get(pk=folder_id)
     folder.delete()
-    folders = Folder.objects.filter(user=request.user)
+    folders = Folder.objects.select_related().filter(user=request.user)
     all_folders=folders.first()
-    return render(request, 'webclient/index.html', {'folder_id':all_folders.id,'all_folders': all_folders})
+    all_folders1=Folder.objects.select_related().filter(folder=all_folders)
+    return render(request, 'webclient/index.html', {'folder_id':all_folders.id,'all_folders': all_folders1})
 
 def create_file(request,folder_id) :
     if not request.user.is_authenticated:
@@ -271,3 +272,34 @@ class folderuploadapi(APIView):
         ftu = request.data["ftu"]
         UF(ftu,folder,name,request.user)
         return Response([{"status":"successful"}])
+
+class showdataapi(APIView):
+    def post(self, request):
+        user = request.user
+        all_folders = Folder.objects.select_related().filter(user=user)
+        dict={}
+        dict1 = {}
+        dict2 ={}
+        dict["status"]="successful"
+        for folder in all_folders:
+            dict1[folder.name]=folder.id
+            files = File.objects.select_related().filter(folder=folder)
+            for file in files:
+                dict2[file.name]=file.id
+        dict["folders"]=dict1
+        dict["files"]=dict2
+        return Response([dict])
+
+class filedeleteapi(APIView):
+    def post(self, request):
+        file = request.data["file"]
+        file1 = File.objects.select_related().filter(pk=file)
+        file1.delete()
+        return Response([{"status":"Successfully Deleted"}])
+
+class folderdeleteapi(APIView):
+    def post(self,request):
+        folder = request.data["folder"]
+        f = Folder.objects.select_related().filter(pk=folder)
+        f.delete()
+        return Response([{"status":"Successfully Deleted"}])

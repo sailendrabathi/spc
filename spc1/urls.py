@@ -33,6 +33,7 @@ urlpatterns = [
     url(r'^apilogout/',views.logoutapi.as_view(),name="api_logout"),
     url(r'^fileuploadapi/',views.fileuploadapi.as_view(),name='api_file'),
     url(r'folderuploadapi/',views.folderuploadapi.as_view(),name='folderuploadapi'),
+    url(r'^apishowdata/',views.showdataapi.as_view(),name = 'showdataapi'),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 if settings.DEBUG:
