@@ -288,6 +288,7 @@ class showdataapi(APIView):
                 dict2[file.name]=file.id
         dict["folders"]=dict1
         dict["files"]=dict2
+        print(dict)
         return Response([dict])
 
 class filedeleteapi(APIView):
@@ -295,11 +296,11 @@ class filedeleteapi(APIView):
         file = request.data["file"]
         file1 = File.objects.select_related().filter(pk=file)
         file1.delete()
-        return Response([{"status":"Successfully Deleted"}])
+        return Response([{"status":"successful"}])
 
 class folderdeleteapi(APIView):
     def post(self,request):
         folder = request.data["folder"]
         f = Folder.objects.select_related().filter(pk=folder)
         f.delete()
-        return Response([{"status":"Successfully Deleted"}])
+        return Response([{"status":"successful"}])

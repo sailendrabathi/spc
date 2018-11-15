@@ -8,6 +8,9 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
 from Crypto import Random
+from Crypto.Cipher import PKCS1_OAEP
+import zlib
+import base64
 
 def encrypt_file_aes(key, in_filename, out_filename=None, chunksize=64*1024):
     """ Encrypts a file using AES (CBC mode) with the
@@ -79,45 +82,57 @@ def decrypt_file_aes(key, in_filename, out_filename=None, chunksize=24*1024):
             outfile.truncate(origsize)
 
 
-def encrypt_file_rsa(public_key, in_filename, out_filename=None, chunksize=128):
+def encrypt_file_rsa(public_key, in_filename, out_filename=None, chunksize=470):
     to_join = []
+    rsa_key = RSA.importKey(public_key)
+    rsa_key = PKCS1_OAEP.new(rsa_key)
+
     if not out_filename:
         out_filename = in_filename + '.enc'
 
     filesize = os.path.getsize(in_filename)
 
+    offset = 0
+    end_loop = False
+    encrypted = b''
+
     with open(in_filename, 'rb') as infile:
         with open(out_filename, 'wb') as outfile:
             outfile.write(struct.pack('<Q', filesize))
+            blob = infile.read()
+            blob = zlib.compress(blob)
+            while not end_loop:
+                chunk = blob[offset:offset+chunksize]
+                if len(chunk) % chunksize != 0:
+                    end_loop = True
+                    chunk += b' ' * (chunksize - len(chunk))
+                encrypted += rsa_key.encrypt(chunk)
+                offset += chunksize
 
-            while True:
-                chunk = infile.read(chunksize)
-                if len(chunk) == 0:
-                    break
-                elif len(chunk) % 16 != 0:
-                    chunk += b' ' * (16 - len(chunk) % 16)
-                print(chunk)
-                print(public_key.encrypt(chunk, 32))
-                print("")
-                outfile.write(public_key.encrypt(chunk, 32)[0])
+            outfile.write(base64.b64encode(encrypted))
 
 
-def decrypt_file_rsa(rsa_key, in_filename, out_filename=None, chunksize=128):
+def decrypt_file_rsa(private_key, in_filename, out_filename=None, chunksize=512):
+    rsa_key = RSA.importKey(private_key)
+    rsa_key = PKCS1_OAEP.new(rsa_key)
+
+    offset = 0;
+    decrypted = b''
+
     if not out_filename:
         out_filename = os.path.splitext(in_filename)[0]
 
     with open(in_filename, 'rb') as infile:
         origsize = struct.unpack('<Q', infile.read(struct.calcsize('Q')))[0]
-
+        blob = infile.read()
+        blob = base64.b64decode(blob)
         with open(out_filename, 'wb') as outfile:
-            while True:
-                chunk = infile.read(chunksize)
-                if len(chunk) == 0:
-                    break
-                print((chunk,))
-                print(rsa_key.decrypt((chunk,)))
-                print("")
-                outfile.write(rsa_key.decrypt((chunk,)))
+            while offset < len(blob):
+                chunk = blob[offset:offset + chunksize]
+                decrypted += rsa_key.decrypt(chunk)
+                offset += chunksize
+
+            outfile.write(zlib.decompress(decrypted))
 
             outfile.truncate(origsize)
 
@@ -133,15 +148,17 @@ encrypt_file_aes(key, "fernando.jpg", "p1.txt.enc")
 decrypt_file_aes(key, "p1.txt.enc", "fernando2.jpg")
 
 ran_gen = Random.new().read
-rsa_key = RSA.generate(1024, ran_gen)
-public_key = rsa_key.publickey()
+rsa_key = RSA.generate(4096, e=65537)
+private_key = rsa_key.exportKey("PEM")
+public_key = rsa_key.publickey().exportKey("PEM")
 
-x = public_key.encrypt(b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xff\xdb\x00C\x00\x02\x01\x01\x01\x01\x01\x02\x01\x01\x01\x02\x02\x02\x02\x02\x04\x03\x02\x02\x02\x02\x05\x04\x04\x03\x04\x06\x05\x06\x06\x06\x05\x06\x06\x06\x07\t\x08\x06\x07\t\x07\x06\x06\x08\x0b\x08\t\n\n\n\n\n\x06\x08\x0b\x0c\x0b\n\x0c\t\n\n\n\xff\xdb\x00C\x01\x02\x02\x02\x02\x02\x02\x05\x03\x03\x05\n\x07\x06\x07\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n',32)
-print(x)
-z = rsa_key.decrypt(x)
-print(z)
+fd = open("private_key.pem", "wb")
+fd.write(private_key)
+fd.close()
 
-
+fd = open("public_key.pem", "wb")
+fd.write(public_key)
+fd.close()
 encrypt_file_rsa(public_key, "fernando.jpg", "rsa.enc")
 print("------------")
-decrypt_file_rsa(rsa_key, "rsa.enc", "fernando3.jpg")
+decrypt_file_rsa(private_key, "rsa.enc", "fernando3.jpg")
