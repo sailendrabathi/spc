@@ -24,8 +24,9 @@ def index(request):
     all_folder=all_folders1.first()
     all_folders = Folder.objects.select_related().filter(folder=all_folder.id)
     folder_id = all_folder.id
+    files = File.objects.select_related().filter(folder_id=folder_id)
     # all_folders=all_folder.get(pk=11)
-    context = {'folder_id':folder_id,'all_folders': all_folders}
+    context = {'folder_id':folder_id,'all_folders': all_folders,'files':files}
     return render(request,'webclient/index.html',context)
 
 def detail(request, folder_id):
@@ -170,7 +171,8 @@ def login_user(request):
                 all_folder = all_folder1.first()
                 folder_id = all_folder.id
                 all_folders=Folder.objects.select_related().filter(folder=all_folder.id)
-                context = {'folder_id':folder_id,'all_folders': all_folders}
+                files = File.objects.select_related().filter(folder=all_folder.id)
+                context = {'folder_id':folder_id,'all_folders': all_folders,'files':files}
                 return render(request, 'webclient/index.html', context)
             else:
                 return render(request, 'webclient/login.html', {'error_message': 'Your account has been disabled'})
@@ -236,8 +238,11 @@ class fileuploadapi(APIView):
         name = request.data["name"]
         file = request.data["file"]
         folder1 = Folder.objects.select_related().filter(id=folder).first()
-        up_file1 = open(file, "wb+")
+        up_file1 = open(file, "rb")
         up_file = file1(up_file1)
+        # f1 = File.objects.select_related().filter(name=name)
+        # if not f1:
+        #     return Response([{"status":"file_already_exists"}])
         f = File()
         f.name = name
         f.folder = folder1
@@ -250,16 +255,17 @@ def UF(folder,id,name,user):
     fold.save()
     list = os.listdir(folder)
     for element in list:
-        if os.path.isfile(folder+element):
-            up_file1 = open(folder+element,"wb+")
+        ele = folder+element
+        if os.path.isfile(ele):
+            up_file1 = open(ele,"rb")
             up_file = file1(up_file1)
             f=File()
             f.name = element
             f.folder=fold
             f.media_file.save(os.path.basename(up_file1.name),up_file,save=True)
             f.save()
-        elif os.path.isdir(folder+element):
-            UF(folder+element,fold.id,element,user)
+        elif os.path.isdir(ele):
+            UF(ele,fold.id,element,user)
         else:
             fold1 = Folder(user=user, folder=Folder.objects.select_related().filter(pk=fold.id).first(), name=element)
             fold1.save()
@@ -270,12 +276,21 @@ class folderuploadapi(APIView):
         folder = request.data["folder"]
         name = request.data["name"]
         ftu = request.data["ftu"]
-        UF(ftu,folder,name,request.user)
+        username = request.data["user"]
+        user = User.objects.get(username=username)
+        UF(ftu,folder,name,user)
         return Response([{"status":"successful"}])
 
 class showdataapi(APIView):
     def post(self, request):
-        user = request.user
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
         all_folders = Folder.objects.select_related().filter(user=user)
         dict={}
         dict1 = {}
@@ -288,8 +303,9 @@ class showdataapi(APIView):
                 dict2[file.name]=file.id
         dict["folders"]=dict1
         dict["files"]=dict2
-        print(dict)
-        return Response([dict])
+        dic = []
+        dic.append(dict)
+        return Response(dic)
 
 class filedeleteapi(APIView):
     def post(self, request):

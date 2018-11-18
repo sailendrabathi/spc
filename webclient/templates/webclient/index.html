@@ -61,3 +61,14 @@
     <h3>hii</h3>
     <h3>No Folders</h3>
 {% endif %}
+<h4>Files</h4>
+{% if files %}
+<ul>
+    {%  for fold in files%}
+            <li><a href="{{ fold.media_file.url }}">{{ fold.name }}</a> </li>
+        {% endfor %}
+
+</ul>
+{% else %}
+<h4>hii</h4>
+{% endif %}

@@ -184,7 +184,14 @@ if args.upload_folder:
         folder = input("parent folder id in destination: ")
         name = input("name of the folder in server: ")
         ftu = input("path of the folder to upload(add '/' at the end): ")
-        r = s.post(apiuploadfolder, data={'folder': folder, 'name': name, 'ftu': ftu})
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        r = s.post(apiuploadfolder, data={'folder': folder, 'name': name, 'ftu': ftu,'user': username})
         j = r.json()
         if j[0]["status"] == "successful":
             print("folder upload successful")
@@ -195,7 +202,7 @@ if args.upload_folder:
 
 if args.delete_file:
     if checkauth("user.txt"):
-        file = input("path of the file to delete: ")
+        file = input("id of the file to delete: ")
         r = s.post(apideletefile, data={'file': file})
         j = r.json()
         if j[0]["status"] == "successful":
@@ -208,7 +215,7 @@ if args.delete_file:
 
 if args.delete_folder:
     if checkauth("user.txt"):
-        folder = input("path of the folder to delete: ")
+        folder = input("id of the folder to delete: ")
         r = s.post(apideletefolder, data={'folder': folder})
         j = r.json()
         if j[0]["status"] == "successful":
