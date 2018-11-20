@@ -1,4 +1,6 @@
 import os
+
+import requests
 import wget
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -325,29 +327,29 @@ class filedownloadapi(APIView):
     def post(self,request):
         file = request.data["file"]
         f = File.objects.select_related().filter(pk=file).first()
-<<<<<<< HEAD
         url = f.media_file.url
-        url1 = "http://127.0.0.1:8000/"+url
+        url1 = "http://127.0.0.1:8000"+url
         s = requests.session()
         r = s.get(url1)
         out = open(f.name , "wb")
         out.write(r.content)
         out.close()
-        return Response([{"status": "successful"}])
+        return Response([{"status": "success"}])
 
 def FD(folder,path):
-    flist = Folder.objects.select_related().filter(folder=folder)
-    # fold = Folder.objects.select_related().filter(pk=folder).first()
+
+    fold = Folder.objects.select_related().filter(pk=folder).first()
+    flist = Folder.objects.select_related().filter(folder=fold)
     directory = os.path.dirname(path)
     if not os.path.exists(directory):
         os.makedirs(directory)
     for element in flist :
-        FD(element.id , path+"/"+element.name)
+        FD(element.id , path+"/"+element.name+"/")
     filelist = File.objects.select_related().filter(folder=folder)
     for ele in filelist:
         s = requests.session()
         url = ele.media_file.url
-        url1 = "http://127.0.0.1:8000/" + url
+        url1 = "http://127.0.0.1:8000" + url
         r = s.get(url1)
         out = open(path+"/"+ele.name,"wb")
         out.write(r.content)
@@ -358,13 +360,5 @@ class folderdownloadapi(APIView):
     def post(self,request):
         folder = request.data["folder"]
         f = Folder.objects.select_related().filter(pk=folder).first()
-        FD(folder , f.name)
+        FD(folder , f.name+"/")
         return Response([{"status":"successful"}])
-=======
-        # name = f.name
-        url = f.media_file.url
-        url1 = "http://127.0.0.1:8000"+url
-        wget.download(url1)
-        return Response([{"status":"successful"}])
-
->>>>>>> Done download file and folder

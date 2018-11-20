@@ -36,12 +36,8 @@ urlpatterns = [
     url(r'^apishowdata/',views.showdataapi.as_view(),name = 'showdataapi'),
     url(r'^filedeleteapi/',views.filedeleteapi.as_view(),name='filedeleteapi'),
     url(r'^folderdeleteapi/',views.folderdeleteapi.as_view(),name='folderdeleteapi'),
-<<<<<<< HEAD
     url(r'^apidownloadfolder/',views.folderdownloadapi.as_view(),name='folderdownloadapi'),
     url(r'^apidownloadfile/',views.filedownloadapi.as_view(),name='filedownloadapi'),
-=======
-    url(r'^filedownloadapi/',views.filedownloadapi.as_view(),name='filedownloadapi'),
->>>>>>> Done download file and folder
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 if settings.DEBUG:
