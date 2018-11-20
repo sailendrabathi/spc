@@ -1,5 +1,5 @@
 import os
-
+import wget
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
@@ -325,6 +325,7 @@ class filedownloadapi(APIView):
     def post(self,request):
         file = request.data["file"]
         f = File.objects.select_related().filter(pk=file).first()
+<<<<<<< HEAD
         url = f.media_file.url
         url1 = "http://127.0.0.1:8000/"+url
         s = requests.session()
@@ -359,3 +360,11 @@ class folderdownloadapi(APIView):
         f = Folder.objects.select_related().filter(pk=folder).first()
         FD(folder , f.name)
         return Response([{"status":"successful"}])
+=======
+        # name = f.name
+        url = f.media_file.url
+        url1 = "http://127.0.0.1:8000"+url
+        wget.download(url1)
+        return Response([{"status":"successful"}])
+
+>>>>>>> Done download file and folder
