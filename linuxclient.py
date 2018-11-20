@@ -1,6 +1,10 @@
 import requests
 import argparse
 import getpass
+import os.path
+# import sys
+# sys.path.insert(0, 'E-D/')
+# import e_d
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--signup", action='store_true')
@@ -20,6 +24,11 @@ parser.add_argument("--server", action='store_true')
 parser.add_argument("--info", action='store_true')
 parser.add_argument("--download_file", action='store_true')
 parser.add_argument("--download_folder", action='store_true')
+parser.add_argument("--list", action='store_true')
+parser.add_argument("--dump")
+parser.add_argument("--update", action='store_true')
+parser.add_argument("--update1")
+
 args = parser.parse_args()
 
 apiauth = "http://127.0.0.1:8000/apiauth/"
@@ -37,11 +46,14 @@ apidownloadfolder = "http://127.0.0.1:8000/apidownloadfolder/"
 s = requests.session()  # add session time also(to be done in django and delete user.txt or write to null)
 
 dir_path = ""
-ver = "not specified"
+ver = "1.0"
 ip = "127.0.0.1:8000"
 
 
 def checkauth(file):
+    if not os.path.isfile(file):
+        return False
+
     with open(file, 'r') as f1:
         lines = f1.read().splitlines()
         if len(lines) == 2:
@@ -74,7 +86,7 @@ if args.set_url:
 
     print("address set to :", ip)
 
-if args.signup:
+elif args.signup:
     user = input("username: ")
     email = input("email: ")
     p123 = email.split('@')
@@ -106,7 +118,7 @@ if args.signup:
     else:
         print("invalid email format")
 
-if args.config:
+elif args.config:
     user = input("username: ")
     passwd = getpass.getpass("password: ")
     passwd1 = getpass.getpass("confirm password: ")
@@ -116,19 +128,19 @@ if args.config:
     else:
         print("passwords did not match, try again")
 
-if args.observe:
+elif args.observe:
     dir_path = input("enter directory path: ")
 
-if args.version:
+elif args.version:
     print(ver)
 
-if args.server:
+elif args.server:
     address = ip.split(":")[0]
     port = ip.split(":")[1]
     print("address:", address)
     print("port:", port)
 
-if args.login:
+elif args.login:
     user = input("username: ")
     passwd = getpass.getpass("password: ")
     r = s.post(apilogin, data={'username': user, 'password': passwd})
@@ -146,7 +158,7 @@ if args.login:
         f.write('')
         print("login failed, try again.")
 
-if args.logout:
+elif args.logout:
     if checkauth("user.txt"):
         conf = input("logout?(Y/n): ")
         if conf == "Y" or conf == "y":
@@ -165,7 +177,7 @@ if args.logout:
     else:
         print("logout failed, user logged out already")
 
-if args.upload_file:
+elif args.upload_file:
     if checkauth("user.txt"):
         folder = input("parent folder id in destination: ")
         name = input("name of the file in server: ")
@@ -179,7 +191,7 @@ if args.upload_file:
     else:
         print("no user logged in, please log in ")
 
-if args.upload_folder:
+elif args.upload_folder:
     if checkauth("user.txt"):
         folder = input("parent folder id in destination: ")
         name = input("name of the folder in server: ")
@@ -200,7 +212,7 @@ if args.upload_folder:
     else:
         print("no user logged in, please log in")
 
-if args.delete_file:
+elif args.delete_file:
     if checkauth("user.txt"):
         file = input("id of the file to delete: ")
         r = s.post(apideletefile, data={'file': file})
@@ -213,7 +225,7 @@ if args.delete_file:
         print("no user logged in, please log in ")
 
 
-if args.delete_folder:
+elif args.delete_folder:
     if checkauth("user.txt"):
         folder = input("id of the folder to delete: ")
         r = s.post(apideletefolder, data={'folder': folder})
@@ -225,10 +237,10 @@ if args.delete_folder:
     else:
         print("no user logged in, please log in ")
 
-if args.sync:
+elif args.sync:
     print("not implemented")
 
-if args.show_data:
+elif args.show_data:
     if checkauth("user.txt"):
         r = s.post(apishowdata)
         j = r.json()
@@ -242,14 +254,79 @@ if args.show_data:
     else:
         print("no user logged in, please log in ")
 
-if args.download_file:
+elif args.download_file:
+    if checkauth("user.txt"):
+        file = input("id of the file to download: ")
+        print("downloading file...")
+        r = s.post(apidownloadfile, data={'file': file})        #change the algo in views.py
+        j = r.json()
+        if j[0]["status"] == "successful":
+            print("file download successful")
+        else:
+            print("file download failed, try again")
+    else:
+        print("no user logged in, please log in ")
+
+
+elif args.download_folder:
+    if checkauth("user.txt"):
+        folder = input("id of the folder to download: ")
+        print("downloading folder...")
+        r = s.post(apidownloadfolder, data={'folder': folder})
+        j = r.json()
+        if j[0]["status"] == "successful":                  #change the algo in views.py
+            print("folder download successful")
+        else:
+            print("folder download failed, try again")
+    else:
+        print("no user logged in, please log in ")
+
+elif args.info:
     print("not implemented")
 
-if args.download_folder:
-    print("not implemented")
+elif args.list:
+    print("Supported encryption schemes:")
+    print("1. AES-CBC")                                                 #need a third scheme
+    print("2. RSA")
+    print("3. ------")
 
-if args.info:
-    print("not implemented")
+elif args.update:
+    schema = input("Schema: ")
+    if schema == "RSA":
+        pub_key = input("Public Key(4096 bits): ")
+        pri_key = input("Private Key(4096 bits): ")                     ##encrypt and pass
+        f = open("pass.txt", 'w')
+        f.write(schema + '\n' + pub_key + '\n' + pri_key)               ##sync is required
+        print("update completed")
+    elif schema == "AES-CBC":
+        key = input("Key: ")
+        f = open("pass.txt", 'w')
+        f.write(schema + '\n' + key)
+        print("update completed")
+    else:
+        print("Invalid Schema, use \"spc list\" to list supported schemes")
+
+elif args.dump:
+    if os.path.isfile("pass.txt"):
+        f = open(args.dump, 'w')
+        f0 = open("pass.txt", 'r')
+        for line in f0:
+            f.write(line)
+        print("dump completed")
+        print(args.dump, "now contains the schema data")
+    else:
+        print("no schema data to dump, please specify update the schema")
+
+elif args.update1:
+    if os.path.isfile(args.update1):
+        f0 = open("pass.txt", 'w')                                      ##sync is required
+        f = open(args.update1, 'r')
+        for line in f:                                                  ##encrypt amd pass (only pass.txt)
+            f0.write(line)
+        print('update completed')
+    else:
+        print("update failed, no such file", args.update1)
+
 
 # user = input("user :")
 # passwd = input("pass: ")

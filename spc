@@ -10,15 +10,26 @@ then
 	elif [ $1 == "download_file" ] || [ $1 == "download_folder" ]; then
 		python3 linuxclient.py "--"$@
 	else
-		echo "invalid argument, use 'spc help' command for help"
+		echo "invalid argument, use 'spc info' command for help"
 	fi
 elif [ $# -eq 2 ]; then
-	if [ $1 == "en-de" ]
-	then
-		python3 linuxclient.py "--"$1 "--"$2
+	if [ $1 == "en-de" ]; then
+		if [ $2 == "list" ] || [ $2 == "update" ]; then 
+			python3 linuxclient.py "--"$2
+		else
+			echo "invalid arguments, use 'spc info' command for help"	
+		fi
 	else
-		echo "invalid arguments, use 'spc help' command for help"
-	fi						
+		echo "invalid arguments, use 'spc info' command for help"
+	fi
+elif [ $# -eq 3 ]; then
+	if [ $1 == "en-de" ] && [ $2 == "update" ]; then
+		python3 linuxclient.py "--update1" $3
+	elif [ $1 == "en-de" ] && [ $2 == "dump" ]; then
+		python3 linuxclient.py "--dump" $3
+	else
+		echo "invalid arguments, use 'spc info' command for help"
+	fi							
 else
-	echo "invalid number of arguments, use 'spc help' command for help"
+	echo "invalid number of arguments, use 'spc info' command for help"
 fi	
