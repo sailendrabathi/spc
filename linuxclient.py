@@ -2,9 +2,7 @@ import requests
 import argparse
 import getpass
 import os.path
-# import sys
-# sys.path.insert(0, 'E-D/')
-# import e_d
+import pprint
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--signup", action='store_true')
@@ -31,23 +29,49 @@ parser.add_argument("--update1")
 
 args = parser.parse_args()
 
-apiauth = "http://127.0.0.1:8000/apiauth/"
-apiregister = "http://127.0.0.1:8000/apiregister/"
-apilogin = "http://127.0.0.1:8000/apilogin/"
-apiuploadfolder = "http://127.0.0.1:8000/folderuploadapi/"
-apilogout = "http://127.0.0.1:8000/apilogout/"
-apideletefile = "http://127.0.0.1:8000/filedeleteapi/"
-apideletefolder = "http://127.0.0.1:8000/folderdeleteapi/"
-apiuploadfile = "http://127.0.0.1:8000/fileuploadapi/"
-apisync = "http://127.0.0.1:8000/apisync/"
-apishowdata = "http://127.0.0.1:8000/apishowdata/"
-apidownloadfile = "http://127.0.0.1:8000/apidownloadfile/"
-apidownloadfolder = "http://127.0.0.1:8000/apidownloadfolder/"
+# apiauth = "http://127.0.0.1:8000/apiauth/"
+# apiregister = "http://127.0.0.1:8000/apiregister/"
+# apilogin = "http://127.0.0.1:8000/apilogin/"
+# apiuploadfolder = "http://127.0.0.1:8000/folderuploadapi/"
+# apilogout = "http://127.0.0.1:8000/apilogout/"
+# apideletefile = "http://127.0.0.1:8000/filedeleteapi/"
+# apideletefolder = "http://127.0.0.1:8000/folderdeleteapi/"
+# apiuploadfile = "http://127.0.0.1:8000/fileuploadapi/"
+# apisync = "http://127.0.0.1:8000/apisync/"
+# apishowdata = "http://127.0.0.1:8000/apishowdata/"
+# apidownloadfile = "http://127.0.0.1:8000/apidownloadfile/"
+# apidownloadfolder = "http://127.0.0.1:8000/apidownloadfolder/"
 s = requests.session()  # add session time also(to be done in django and delete user.txt or write to null)
 
 dir_path = ""
 ver = "1.0"
 ip = "127.0.0.1:8000"
+
+if os.path.isfile("urls.txt"):
+    urls = []
+    fu = open("urls.txt", 'r')
+    for line in fu:
+        for word in line.split():
+            urls.append(word)
+            break
+    ip = urls[0]
+else:
+    fu = open("urls.txt", 'w')
+    fu.write(ip)
+
+
+apiauth = "http://" + ip + "/apiauth/"
+apiregister = "http://" + ip + "/apiregiste/r"
+apilogin = "http://" + ip + "/apilogin/"
+apilogout = "http://" + ip + "/apilogout/"
+apiuploadfolder = "http://" + ip + "/folderuploadapi"
+apiuploadfile = "http://" + ip + "/fileuploadapi/"
+apideletefile = "http://" + ip + "/filedeleteapi/"
+apideletefolder = "http://" + ip + "/folderdeleteapi/"
+apishowdata = "http://" + ip + "/apishowdata/"
+apisync = "http://" + ip + "/apisync/"
+apidownloadfile = "http://" + ip + "/apidownloadfile/"
+apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
 
 
 def checkauth(file):
@@ -83,7 +107,8 @@ if args.set_url:
     apisync = "http://" + ip + "/apisync/"
     apidownloadfile = "http://" + ip + "/apidownloadfile/"
     apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
-
+    f = open("urls.txt", 'w')
+    f.write(ip)
     print("address set to :", ip)
 
 elif args.signup:
@@ -182,12 +207,16 @@ elif args.upload_file:
         folder = input("parent folder id in destination: ")
         name = input("name of the file in server: ")
         file = input("path of the file to upload: ")
-        r = s.post(apiuploadfile, data={'folder': folder, 'name': name, 'file': file})
-        j = r.json()
-        if j[0]["status"] == "successful":
-            print("file upload successful")
+        if os.path.isfile("pass.txt"):
+            print("uploading file...")
+            r = s.post(apiuploadfile, data={'folder': folder, 'name': name, 'file': file})
+            j = r.json()
+            if j[0]["status"] == "successful":
+                print("file upload successful")
+            else:
+                print("file upload failed, try again")
         else:
-            print("file upload failed, try again")
+            print("no encryption schema specified, please specify/update the schema")
     else:
         print("no user logged in, please log in ")
 
@@ -203,12 +232,16 @@ elif args.upload_folder:
                 username = word
                 break
             break
-        r = s.post(apiuploadfolder, data={'folder': folder, 'name': name, 'ftu': ftu,'user': username})
-        j = r.json()
-        if j[0]["status"] == "successful":
-            print("folder upload successful")
+        if os.path.isfile("pass.txt"):
+            print("uploading folder...")
+            r = s.post(apiuploadfolder, data={'folder': folder, 'name': name, 'ftu': ftu,'user': username})
+            j = r.json()
+            if j[0]["status"] == "successful":
+                print("folder upload successful")
+            else:
+                print("folder upload failed, try again")
         else:
-            print("folder upload failed, try again")
+            print("no encryption schema specified, please specify/update the schema")
     else:
         print("no user logged in, please log in")
 
@@ -219,6 +252,8 @@ elif args.delete_file:
         j = r.json()
         if j[0]["status"] == "successful":
             print("file delete successful")
+        elif j[0]["status"] == "no_file":
+            print("no file with id", file)
         else:
             print("file delete failed, try again")
     else:
@@ -232,6 +267,8 @@ elif args.delete_folder:
         j = r.json()
         if j[0]["status"] == "successful":
             print("folder delete successful")
+        elif j[0]["status"] == "no_folder":
+            print("no file with id", folder)
         else:
             print("folder delete failed, try again")
     else:
@@ -242,14 +279,12 @@ elif args.sync:
 
 elif args.show_data:
     if checkauth("user.txt"):
-        r = s.post(apishowdata)
-        j = r.json()
-        if j[0]["status"] == "successful":
-            dict1 = j[0]["folders"]
-            dict2 = j[0]["files"]
-            print(dict1)
-            print(dict2)
-        else:
+        try:
+            r = s.post(apishowdata)
+            j = r.json()
+            pp = pprint.PrettyPrinter(indent=1)
+            pp.pprint(j[0])
+        except:
             print("fetching data failed, try again")
     else:
         print("no user logged in, please log in ")
@@ -257,13 +292,18 @@ elif args.show_data:
 elif args.download_file:
     if checkauth("user.txt"):
         file = input("id of the file to download: ")
-        print("downloading file...")
-        r = s.post(apidownloadfile, data={'file': file})        #change the algo in views.py
-        j = r.json()
-        if j[0]["status"] == "successful":
-            print("file download successful")
+        if os.path.isfile("pass.txt"):
+            print("downloading file...")
+            r = s.post(apidownloadfile, data={'file': file})        #change the algo in views.py
+            j = r.json()
+            if j[0]["status"] == "successful":
+                print("file download successful")
+            elif j[0]["status"] == "no_file":
+                print("no file with id", file)
+            else:
+                print("file download failed, try again")
         else:
-            print("file download failed, try again")
+            print("no encryption schema specified, please specify/update the schema")
     else:
         print("no user logged in, please log in ")
 
@@ -271,13 +311,18 @@ elif args.download_file:
 elif args.download_folder:
     if checkauth("user.txt"):
         folder = input("id of the folder to download: ")
-        print("downloading folder...")
-        r = s.post(apidownloadfolder, data={'folder': folder})
-        j = r.json()
-        if j[0]["status"] == "successful":                  #change the algo in views.py
-            print("folder download successful")
+        if os.path.isfile("pass.txt"):
+            print("downloading folder...")
+            r = s.post(apidownloadfolder, data={'folder': folder})
+            j = r.json()
+            if j[0]["status"] == "successful":                  #change the algo in views.py
+                print("folder download successful")
+            elif j[0]["status"] == "no_folder":
+                print("no file with id", folder)
+            else:
+                print("folder download failed, try again")
         else:
-            print("folder download failed, try again")
+            print("no encryption schema specified, please specify/update the schema")
     else:
         print("no user logged in, please log in ")
 
@@ -315,7 +360,7 @@ elif args.dump:
         print("dump completed")
         print(args.dump, "now contains the schema data")
     else:
-        print("no schema data to dump, please specify update the schema")
+        print("no schema data to dump, please specify/update the schema")
 
 elif args.update1:
     if os.path.isfile(args.update1):
@@ -328,13 +373,3 @@ elif args.update1:
         print("update failed, no such file", args.update1)
 
 
-# user = input("user :")
-# passwd = input("pass: ")
-
-# f = open("user.txt","w")
-# f.write(user + "\n" +passwd)
-
-# s= requests.session()
-# r = s.get(apiurl, data={'username': user, 'password' : passwd})
-# j= r.json()
-# print(j[0]["detail"])

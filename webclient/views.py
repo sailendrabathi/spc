@@ -1,23 +1,18 @@
 import os
-
+import hashlib
 import requests
-import wget
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.urls import reverse_lazy
 from django.views.generic import View
 from rest_framework.response import Response
-from rest_framework import generics, status
 from rest_framework.views import APIView
-from spc1.settings import MEDIA_URL
-from webclient.serializers import FileSerializer, FolderSerializer
 from .models import Folder, File
-from django.views import generic
 from .forms import UserForm, FolderForm, FileForm
 from django.views.generic.edit import CreateView,UpdateView,DeleteView
 from django.core.files import File as file1
+from . import e_d
+
 # Create your views here.
 def index(request):
     if not request.user.is_authenticated:
@@ -82,7 +77,7 @@ class update_folder(UpdateView):
 
 def delete_folder(request, folder_id):
     if not request.user.is_authenticated:
-        return render(request, 'webclient/login.html')
+        return render(request, 'webclient/lo   gin.html')
     folder = Folder.objects.get(pk=folder_id)
     folder.delete()
     folders = Folder.objects.select_related().filter(user=request.user)
@@ -240,16 +235,29 @@ class fileuploadapi(APIView):
         name = request.data["name"]
         file = request.data["file"]
         folder1 = Folder.objects.select_related().filter(id=folder).first()
-        up_file1 = open(file, "rb")
+        f = open("pass.txt", 'r')
+        schema = []
+        for line in f:
+            for word in line.split():
+                schema.append(word)
+                break
+        if schema[0] == "AES-CBC":
+            key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+            e_d.encrypt_file_aes(key, file, "up_file.enc")
+        elif schema[0] == "RSA":
+            #encrypt_file_rsa()
+            print("not implemented")
+        up_file1 = open("up_file.enc", "rb")
         up_file = file1(up_file1)
-        # f1 = File.objects.select_related().filter(name=name)
-        # if not f1:
+        #f1 = File.objects.select_related().filter(name=name)
+        # if not f1:                                                                       ###ask whether to overwrite or to skip upload
         #     return Response([{"status":"file_already_exists"}])
         f = File()
         f.name = name
         f.folder = folder1
-        f.media_file.save(os.path.basename(up_file1.name),up_file,save=True)
+        f.media_file.save(os.path.basename(f.name), up_file, save=True)
         f.save()
+        os.remove("up_file.enc")
         return Response([{"status":"successful"}])
 
 def UF(folder,id,name,user):
@@ -259,13 +267,26 @@ def UF(folder,id,name,user):
     for element in list:
         ele = folder+element
         if os.path.isfile(ele):
-            up_file1 = open(ele,"rb")
+            f1 = open("pass.txt", 'r')
+            schema = []
+            for line in f1:
+                for word in line.split():
+                    schema.append(word)
+                    break
+            if schema[0] == "AES-CBC":
+                key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                e_d.encrypt_file_aes(key, ele, "up_file.enc")
+            elif schema[0] == "RSA":
+                # encrypt_file_rsa()
+                print("not implemented")
+            up_file1 = open("up_file.enc","rb")
             up_file = file1(up_file1)
             f=File()
             f.name = element
             f.folder=fold
-            f.media_file.save(os.path.basename(up_file1.name),up_file,save=True)
+            f.media_file.save(os.path.basename(element),up_file,save=True)
             f.save()
+            os.remove("up_file.enc")
         elif os.path.isdir(ele):
             UF(ele,fold.id,element,user)
         else:
@@ -278,7 +299,7 @@ class folderuploadapi(APIView):
         folder = request.data["folder"]
         name = request.data["name"]
         ftu = request.data["ftu"]
-        username = request.data["user"]
+        username = request.data["user"]                                         ###ask whether to overwrite or to skip upload
         user = User.objects.get(username=username)
         UF(ftu,folder,name,user)
         return Response([{"status":"successful"}])
@@ -309,7 +330,9 @@ class showdataapi(APIView):
         user = User.objects.get(username=username)
         all_folders = Folder.objects.select_related().filter(user=user).first()
         dic = []
-        dic.append(sdf(all_folders.id))
+        dic1 = {}
+        dic1[all_folders.name + "(" + str(all_folders.id) + ")"] = sdf(all_folders.id)
+        dic.append(dic1)
         return Response(dic)
 
 class filedeleteapi(APIView):
@@ -331,7 +354,7 @@ class filedeleteapi(APIView):
             file1.delete()
             return Response([{"status":"successful"}])
         else:
-            return Response([{"status":"No such file exists"}])
+            return Response([{"status":"no_file"}])
 
 class folderdeleteapi(APIView):
     def post(self,request):
@@ -350,7 +373,7 @@ class folderdeleteapi(APIView):
             f.delete()
             return Response([{"status":"successful"}])
         else:
-            return Response({{"status":"No such folder exists"}})
+            return Response([{"status":"no_folder"}])
 
 class filedownloadapi(APIView):
     def post(self,request):
@@ -367,15 +390,35 @@ class filedownloadapi(APIView):
         f = File.objects.select_related().filter(pk=file).first()
         if f and f.folder in all_folders:
             url = f.media_file.url
-            url1 = "http://127.0.0.1:8000"+url
+            fu = open("user.txt")
+            ip = ""
+            for line in fu:
+                for word in line.split():
+                    ip = word
+                    break
+                break
+            url1 = "http://"+ip+url
             s = requests.session()
             r = s.get(url1)
-            out = open(f.name , "wb")
+            out = open("down_file.enc" , "wb")
             out.write(r.content)
             out.close()
-            return Response([{"status": "success"}])
+            f1 = open("pass.txt", 'r')
+            schema = []
+            for line in f1:
+                for word in line.split():
+                    schema.append(word)
+                    break
+            if schema[0] == "AES-CBC":
+                key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                e_d.decrypt_file_aes(key, "down_file.enc", f.name)
+            elif schema[0] == "RSA":
+                # encrypt_file_rsa()
+                print("not implemented")
+            os.remove("down_file.enc")
+            return Response([{"status": "successful"}])
         else:
-            return Response([{"status":"No such file exists"}])
+            return Response([{"status":"no_file"}])
 
 def FD(folder,path):
 
@@ -390,12 +433,32 @@ def FD(folder,path):
     for ele in filelist:
         s = requests.session()
         url = ele.media_file.url
-        url1 = "http://127.0.0.1:8000" + url
+        fu = open("user.txt")
+        ip = ""
+        for line in fu:
+            for word in line.split():
+                ip = word
+                break
+            break
+        url1 = "http://"+ip+ url
         r = s.get(url1)
-        out = open(path+"/"+ele.name,"wb")
+        out = open("down_file.enc","wb")
         out.write(r.content)
         out.close()
-        return Response([{"status": "successful"}])
+        f1 = open("pass.txt", 'r')
+        schema = []
+        for line in f1:
+            for word in line.split():
+                schema.append(word)
+                break
+        if schema[0] == "AES-CBC":
+            key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+            e_d.decrypt_file_aes(key, "down_file.enc", path+"/"+ele.name)
+        elif schema[0] == "RSA":
+            # encrypt_file_rsa()
+            print("not implemented")
+        os.remove("down_file.enc")
+    return Response([{"status": "successful"}])
 
 class folderdownloadapi(APIView):
     def post(self,request):
@@ -414,4 +477,4 @@ class folderdownloadapi(APIView):
             FD(folder , f.name+"/")
             return Response([{"status":"successful"}])
         else :
-            return Response([{"status":"No such folder exists"}])
+            return Response([{"status":"no_folder"}])
