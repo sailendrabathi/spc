@@ -283,6 +283,20 @@ class folderuploadapi(APIView):
         UF(ftu,folder,name,user)
         return Response([{"status":"successful"}])
 
+def sdf(folder):
+    d = {}
+    d2 = {}
+    files = File.objects.select_related().filter(folder=folder)
+    for file in files:
+        d2[file.name]=file.id
+    folders = Folder.objects.select_related().filter(folder=folder)
+    for folde in folders:
+        d[folde.name +"("+str(folde.id)+")"] = sdf(folde)
+    dict = {}
+    dict["folders"]=d
+    dict["files"]=d2
+    return dict
+
 class showdataapi(APIView):
     def post(self, request):
         username = ""
@@ -293,48 +307,61 @@ class showdataapi(APIView):
                 break
             break
         user = User.objects.get(username=username)
-        all_folders = Folder.objects.select_related().filter(user=user)
-        dict={}
-        dict1 = {}
-        dict2 ={}
-        dict["status"]="successful"
-        for folder in all_folders:
-            dict1[folder.name]=folder.id
-            files = File.objects.select_related().filter(folder=folder)
-            for file in files:
-                dict2[file.name]=file.id
-        dict["folders"]=dict1
-        dict["files"]=dict2
+        all_folders = Folder.objects.select_related().filter(user=user).first()
         dic = []
-        dic.append(dict)
+        dic.append(sdf(all_folders.id))
         return Response(dic)
 
 class filedeleteapi(APIView):
     def post(self, request):
         file = request.data["file"]
-        file1 = File.objects.select_related().filter(pk=file)
+        file1 = File.objects.select_related().filter(pk=file).first()
         file1.delete()
         return Response([{"status":"successful"}])
 
 class folderdeleteapi(APIView):
     def post(self,request):
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
+        all_folders = Folder.objects.select_related().filter(user=user)
         folder = request.data["folder"]
-        f = Folder.objects.select_related().filter(pk=folder)
-        f.delete()
-        return Response([{"status":"successful"}])
+        f = Folder.objects.select_related().filter(pk=folder).first()
+        if f in all_folders:
+            f.delete()
+            return Response([{"status":"successful"}])
+        else:
+            return Response({{"status":"No such folder exists"}})
 
 class filedownloadapi(APIView):
     def post(self,request):
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
+        all_folders = Folder.objects.select_related().filter(user=user)
         file = request.data["file"]
         f = File.objects.select_related().filter(pk=file).first()
-        url = f.media_file.url
-        url1 = "http://127.0.0.1:8000"+url
-        s = requests.session()
-        r = s.get(url1)
-        out = open(f.name , "wb")
-        out.write(r.content)
-        out.close()
-        return Response([{"status": "success"}])
+        if f.folder in all_folders:
+            url = f.media_file.url
+            url1 = "http://127.0.0.1:8000"+url
+            s = requests.session()
+            r = s.get(url1)
+            out = open(f.name , "wb")
+            out.write(r.content)
+            out.close()
+            return Response([{"status": "success"}])
+        else:
+            return Response({{"status":"No such file exists"}})
 
 def FD(folder,path):
 
@@ -358,7 +385,19 @@ def FD(folder,path):
 
 class folderdownloadapi(APIView):
     def post(self,request):
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
         folder = request.data["folder"]
+        folders = Folder.objects.select_related().filter(user=user)
         f = Folder.objects.select_related().filter(pk=folder).first()
-        FD(folder , f.name+"/")
-        return Response([{"status":"successful"}])
+        if f in folders:
+            FD(folder , f.name+"/")
+            return Response([{"status":"successful"}])
+        else :
+            return Response([{"status":"No such folder exists"}])
