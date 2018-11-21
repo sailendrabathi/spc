@@ -12,7 +12,13 @@ from .forms import UserForm, FolderForm, FileForm
 from django.views.generic.edit import CreateView,UpdateView,DeleteView
 from django.core.files import File as file1
 from . import e_d
-ip = "127.0.0.1:8000"
+fu = open("urls.txt")
+ip = ""
+for line in fu:
+    for word in line.split():
+        ip = word
+        break
+    break
 apiauth = "http://" + ip + "/apiauth/"
 apiregister = "http://" + ip + "/apiregister/"
 apilogin = "http://" + ip + "/apilogin/"
@@ -256,6 +262,9 @@ class fileuploadapi(APIView):
         if schema[0] == "AES-CBC":
             key = hashlib.sha256(schema[1].encode('utf-8')).digest()
             e_d.encrypt_file_aes(key, file, "up_file.enc")
+        elif schema[0] == "AES-ECB":
+            key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+            e_d.encrypt_file_aes1(key, file, "up_file.enc")
         elif schema[0] == "RSA":
             #encrypt_file_rsa()
             print("not implemented")
@@ -288,6 +297,9 @@ def UF(folder,id,name,user):
             if schema[0] == "AES-CBC":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
                 e_d.encrypt_file_aes(key, ele, "up_file.enc")
+            elif schema[0] == "AES-ECB":
+                key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                e_d.encrypt_file_aes1(key, ele, "up_file.enc")
             elif schema[0] == "RSA":
                 # encrypt_file_rsa()
                 print("not implemented")
@@ -402,7 +414,7 @@ class filedownloadapi(APIView):
         f = File.objects.select_related().filter(pk=file).first()
         if f and f.folder in all_folders:
             url = f.media_file.url
-            fu = open("user.txt")
+            fu = open("urls.txt")
             ip = ""
             for line in fu:
                 for word in line.split():
@@ -412,7 +424,7 @@ class filedownloadapi(APIView):
             url1 = "http://"+ip+url
             s = requests.session()
             r = s.get(url1)
-            out = open("down_file.enc" , "wb")
+            out = open("down_file.enc", "wb")
             out.write(r.content)
             out.close()
             f1 = open("pass.txt", 'r')
@@ -424,6 +436,9 @@ class filedownloadapi(APIView):
             if schema[0] == "AES-CBC":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
                 e_d.decrypt_file_aes(key, "down_file.enc", f.name)
+            elif schema[0] == "AES-ECB":
+                key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                e_d.decrypt_file_aes1(key, "down_file.enc", f.name)
             elif schema[0] == "RSA":
                 # encrypt_file_rsa()
                 print("not implemented")
@@ -445,14 +460,14 @@ def FD(folder,path):
     for ele in filelist:
         s = requests.session()
         url = ele.media_file.url
-        fu = open("user.txt")
+        fu = open("urls.txt")
         ip = ""
         for line in fu:
             for word in line.split():
                 ip = word
                 break
             break
-        url1 = "http://"+ip+ url
+        url1 = "http://"+ip+url
         r = s.get(url1)
         out = open("down_file.enc","wb")
         out.write(r.content)
@@ -466,6 +481,9 @@ def FD(folder,path):
         if schema[0] == "AES-CBC":
             key = hashlib.sha256(schema[1].encode('utf-8')).digest()
             e_d.decrypt_file_aes(key, "down_file.enc", path+"/"+ele.name)
+        elif schema[0] == "AES-ECB":
+            key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+            e_d.decrypt_file_aes1(key, "down_file.enc", path+"/"+ele.name)
         elif schema[0] == "RSA":
             # encrypt_file_rsa()
             print("not implemented")

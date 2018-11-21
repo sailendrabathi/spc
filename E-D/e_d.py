@@ -136,6 +136,47 @@ def decrypt_file_rsa(private_key, in_filename, out_filename=None, chunksize=512)
 
             outfile.truncate(origsize)
 
+def encrypt_file_aes1(key, in_filename, out_filename=None, chunksize=64*1024):
+    if not out_filename:
+        out_filename = in_filename + '.enc'
+
+    iv = os.urandom(16)
+    # iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
+    encryptor = AES.new(key, AES.MODE_ECB, iv)
+    filesize = os.path.getsize(in_filename)
+
+    with open(in_filename, 'rb') as infile:
+        with open(out_filename, 'wb') as outfile:
+            outfile.write(struct.pack('<Q', filesize))
+            outfile.write(iv)
+
+            while True:
+                chunk = infile.read(chunksize)
+                if len(chunk) == 0:
+                    break
+                elif len(chunk) % 16 != 0:
+                    chunk += b' ' * (16 - len(chunk) % 16)
+
+                outfile.write(encryptor.encrypt(chunk))
+
+
+def decrypt_file_aes1(key, in_filename, out_filename=None, chunksize=24*1024):
+    if not out_filename:
+        out_filename = os.path.splitext(in_filename)[0]
+
+    with open(in_filename, 'rb') as infile:
+        origsize = struct.unpack('<Q', infile.read(struct.calcsize('Q')))[0]
+        iv = infile.read(16)
+        decryptor = AES.new(key, AES.MODE_ECB, iv)
+
+        with open(out_filename, 'wb') as outfile:
+            while True:
+                chunk = infile.read(chunksize)
+                if len(chunk) == 0:
+                    break
+                outfile.write(decryptor.decrypt(chunk))
+
+            outfile.truncate(origsize)
 
 
 
@@ -147,18 +188,18 @@ encrypt_file_aes(key, "fernando.jpg", "p1.txt.enc")
 
 decrypt_file_aes(key, "p1.txt.enc", "fernando2.jpg")
 
-ran_gen = Random.new().read
-rsa_key = RSA.generate(4096, e=65537)
-private_key = rsa_key.exportKey("PEM")
-public_key = rsa_key.publickey().exportKey("PEM")
-
-fd = open("private_key.pem", "wb")
-fd.write(private_key)
-fd.close()
-
-fd = open("public_key.pem", "wb")
-fd.write(public_key)
-fd.close()
-encrypt_file_rsa(public_key, "fernando.jpg", "rsa.enc")
-print("------------")
-decrypt_file_rsa(private_key, "rsa.enc", "fernando3.jpg")
+# ran_gen = Random.new().read
+# rsa_key = RSA.generate(4096, e=65537)
+# private_key = rsa_key.exportKey("PEM")
+# public_key = rsa_key.publickey().exportKey("PEM")
+#
+# fd = open("private_key.pem", "wb")
+# fd.write(private_key)
+# fd.close()
+#
+# fd = open("public_key.pem", "wb")
+# fd.write(public_key)
+# fd.close()
+# encrypt_file_rsa(public_key, "fernando.jpg", "rsa.enc")
+# print("------------")
+# decrypt_file_rsa(private_key, "rsa.enc", "fernando3.jpg")

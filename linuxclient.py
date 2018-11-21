@@ -92,7 +92,6 @@ def checkauth(file):
         else:
             return False
 
-
 if args.set_url:
     ip = input("Server's ip and port(format - <ip>:<port>): ")
     apiauth = "http://" + ip + "/apiauth/"
@@ -207,16 +206,19 @@ elif args.upload_file:
         folder = input("parent folder id in destination: ")
         name = input("name of the file in server: ")
         file = input("path of the file to upload: ")
-        if os.path.isfile("pass.txt"):
-            print("uploading file...")
-            r = s.post(apiuploadfile, data={'folder': folder, 'name': name, 'file': file})
-            j = r.json()
-            if j[0]["status"] == "successful":
-                print("file upload successful")
+        if os.path.isfile(file):
+            if os.path.isfile("pass.txt"):
+                print("uploading file...")
+                r = s.post(apiuploadfile, data={'folder': folder, 'name': name, 'file': file})
+                j = r.json()
+                if j[0]["status"] == "successful":
+                    print("file upload successful")
+                else:
+                    print("file upload failed, try again")
             else:
-                print("file upload failed, try again")
+                print("no encryption schema specified, please specify/update the schema")
         else:
-            print("no encryption schema specified, please specify/update the schema")
+            print("no such file", file)
     else:
         print("no user logged in, please log in ")
 
@@ -232,22 +234,26 @@ elif args.upload_folder:
                 username = word
                 break
             break
-        if os.path.isfile("pass.txt"):
-            print("uploading folder...")
-            r = s.post(apiuploadfolder, data={'folder': folder, 'name': name, 'ftu': ftu,'user': username})
-            j = r.json()
-            if j[0]["status"] == "successful":
-                print("folder upload successful")
+        if os.path.isdir(ftu):
+            if os.path.isfile("pass.txt"):
+                print("uploading folder...")
+                r = s.post(apiuploadfolder, data={'folder': folder, 'name': name, 'ftu': ftu,'user': username})
+                j = r.json()
+                if j[0]["status"] == "successful":
+                    print("folder upload successful")
+                else:
+                    print("folder upload failed, try again")
             else:
-                print("folder upload failed, try again")
+                print("no encryption schema specified, please specify/update the schema")
         else:
-            print("no encryption schema specified, please specify/update the schema")
+            print("no such folder", ftu)
     else:
         print("no user logged in, please log in")
 
 elif args.delete_file:
     if checkauth("user.txt"):
         file = input("id of the file to delete: ")
+        print("deleting file...")
         r = s.post(apideletefile, data={'file': file})
         j = r.json()
         if j[0]["status"] == "successful":
@@ -263,6 +269,7 @@ elif args.delete_file:
 elif args.delete_folder:
     if checkauth("user.txt"):
         folder = input("id of the folder to delete: ")
+        print("deleting folder...")
         r = s.post(apideletefolder, data={'folder': folder})
         j = r.json()
         if j[0]["status"] == "successful":
@@ -338,49 +345,65 @@ elif args.download_folder:
         print("no user logged in, please log in ")
 
 elif args.info:
-    print("not implemented")
+    f = open("info.txt", 'r')
+    content = f.read()
+    print(content)
 
 elif args.list:
     print("Supported encryption schemes:")
-    print("1. AES-CBC")                                                 #need a third scheme
+    print("1. AES-CBC")
     print("2. RSA")
-    print("3. ------")
+    print("3. AES-ECB")
 
 elif args.update:
-    schema = input("Schema: ")
-    if schema == "RSA":
-        pub_key = input("Public Key(4096 bits): ")
-        pri_key = input("Private Key(4096 bits): ")                     ##encrypt and pass
-        f = open("pass.txt", 'w')
-        f.write(schema + '\n' + pub_key + '\n' + pri_key)               ##sync is required
-        print("update completed")
-    elif schema == "AES-CBC":
-        key = input("Key: ")
-        f = open("pass.txt", 'w')
-        f.write(schema + '\n' + key)
-        print("update completed")
+    if checkauth("user.txt"):
+        schema = input("Schema: ")
+        if schema == "RSA":
+            pub_key = input("Public Key(4096 bits): ")
+            pri_key = input("Private Key(4096 bits): ")                     ##encrypt and pass
+            f = open("pass.txt", 'w')
+            f.write(schema + '\n' + pub_key + '\n' + pri_key)               ##sync is required
+            print("update completed")
+        elif schema == "AES-CBC":
+            key = input("Key: ")
+            f = open("pass.txt", 'w')
+            f.write(schema + '\n' + key)
+            print("update completed")
+        elif schema == "AES-ECB":
+            key = input("Key: ")
+            f = open("pass.txt", 'w')
+            f.write(schema + '\n' + key)
+            print("update completed")
+        else:
+            print("Invalid Schema, use \"spc list\" to list supported schemes")
     else:
-        print("Invalid Schema, use \"spc list\" to list supported schemes")
+        print("no user logged in, please log in ")
 
 elif args.dump:
-    if os.path.isfile("pass.txt"):
-        f = open(args.dump, 'w')
-        f0 = open("pass.txt", 'r')
-        for line in f0:
-            f.write(line)
-        print("dump completed")
-        print(args.dump, "now contains the schema data")
+    if checkauth("user.txt"):
+        if os.path.isfile("pass.txt"):
+            f = open(args.dump, 'w')
+            f0 = open("pass.txt", 'r')
+            for line in f0:
+                f.write(line)
+            print("dump completed")
+            print(args.dump, "now contains the schema data")
+        else:
+            print("no schema data to dump, please specify/update the schema")
     else:
-        print("no schema data to dump, please specify/update the schema")
+        print("no user logged in, please log in ")
 
 elif args.update1:
-    if os.path.isfile(args.update1):
-        f0 = open("pass.txt", 'w')                                      ##sync is required
-        f = open(args.update1, 'r')
-        for line in f:                                                  ##encrypt amd pass (only pass.txt)
-            f0.write(line)
-        print('update completed')
+    if checkauth("user.txt"):
+        if os.path.isfile(args.update1):
+            f0 = open("pass.txt", 'w')                                      ##sync is required
+            f = open(args.update1, 'r')
+            for line in f:                                                  ##encrypt amd pass (only pass.txt)
+                f0.write(line)
+            print('update completed')
+        else:
+            print("update failed, no such file", args.update1)
     else:
-        print("update failed, no such file", args.update1)
+        print("no user logged in, please log in ")
 
 
