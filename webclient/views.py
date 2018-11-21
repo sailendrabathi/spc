@@ -314,10 +314,24 @@ class showdataapi(APIView):
 
 class filedeleteapi(APIView):
     def post(self, request):
-        file = request.data["file"]
-        file1 = File.objects.select_related().filter(pk=file).first()
-        file1.delete()
-        return Response([{"status":"successful"}])
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
+        all_folders = Folder.objects.select_related().filter(user=user)
+        fil = request.data["file"]
+        f = File.objects.select_related().filter(pk=fil).first()
+        if f and f.folder in all_folders:
+            file = request.data["file"]
+            file1 = File.objects.select_related().filter(pk=file).first()
+            file1.delete()
+            return Response([{"status":"successful"}])
+        else:
+            return Response([{"status":"No such file exists"}])
 
 class folderdeleteapi(APIView):
     def post(self,request):
@@ -351,7 +365,7 @@ class filedownloadapi(APIView):
         all_folders = Folder.objects.select_related().filter(user=user)
         file = request.data["file"]
         f = File.objects.select_related().filter(pk=file).first()
-        if f.folder in all_folders:
+        if f and f.folder in all_folders:
             url = f.media_file.url
             url1 = "http://127.0.0.1:8000"+url
             s = requests.session()
@@ -361,7 +375,7 @@ class filedownloadapi(APIView):
             out.close()
             return Response([{"status": "success"}])
         else:
-            return Response({{"status":"No such file exists"}})
+            return Response([{"status":"No such file exists"}])
 
 def FD(folder,path):
 
