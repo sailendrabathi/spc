@@ -12,7 +12,19 @@ from .forms import UserForm, FolderForm, FileForm
 from django.views.generic.edit import CreateView,UpdateView,DeleteView
 from django.core.files import File as file1
 from . import e_d
-
+ip = "127.0.0.1:8000"
+apiauth = "http://" + ip + "/apiauth/"
+apiregister = "http://" + ip + "/apiregister/"
+apilogin = "http://" + ip + "/apilogin/"
+apilogout = "http://" + ip + "/apilogout/"
+apiuploadfolder = "http://" + ip + "/folderuploadapi/"
+apiuploadfile = "http://" + ip + "/fileuploadapi/"
+apideletefile = "http://" + ip + "/filedeleteapi/"
+apideletefolder = "http://" + ip + "/folderdeleteapi/"
+apishowdata = "http://" + ip + "/apishowdata/"
+apisync = "http://" + ip + "/apisync/"
+apidownloadfile = "http://" + ip + "/apidownloadfile/"
+apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
 # Create your views here.
 def index(request):
     if not request.user.is_authenticated:
@@ -478,3 +490,105 @@ class folderdownloadapi(APIView):
             return Response([{"status":"successful"}])
         else :
             return Response([{"status":"no_folder"}])
+
+
+def __sync1__(a,b):
+    folders = Folder.objects.select_related().filter(folder=a)
+    files = File.objects.select_related().filter(folder=a)
+    dirs = os.listdir(b)
+    s = requests.session()
+    dirs1=[]
+    dirs2=[]
+    for f in dirs:
+        if os.path.isfile(os.path.join(b,f)):
+            dirs2.append(f)
+        else:
+            dirs1.append(f)
+    for fold in folders:
+        if dirs1:
+            if fold in dirs1:
+                __sync1__(fold,os.path.join(b,fold))
+                dirs.remove(fold)
+            else :
+
+                r = s.post(apidownloadfolder, data={'folder': fold.id})
+        else:
+            s.post(apidownloadfolder, data={'folder': fold.id})
+    if dirs1:
+        for f1 in dirs1:
+            s.post(apiuploadfolder,data={'folder':os.path.join(b,f1)})
+    for file in files:
+        if dirs2:
+            if file in dirs2:
+                continue
+            else :
+                s.post(apidownloadfile,data={'file':file.id})
+        else:
+            s.post(apidownloadfile,data={'file':file.id})
+    if dirs2:
+        for f2 in dirs2:
+            s.post(apiuploadfile,data={'file':os.path.join(b,f2)})
+
+
+def __sync2__(a, b):
+    folders = Folder.objects.select_related().filter(folder=a)
+    files = File.objects.select_related().filter(folder=a)
+    dirs = os.listdir(b)
+    s = requests.session()
+    dirs1 = []
+    dirs2 = []
+    for f in dirs:
+        if os.path.isfile(os.path.join(b, f)):
+            dirs2.append(f)
+        else:
+            dirs1.append(f)
+    for fold in folders:
+        if dirs1:
+            if fold in dirs1:
+                __sync1__(fold, b + fold)
+                dirs.remove(fold)
+            else:
+
+                r = s.post(apideletefolder, data={'folder': fold.id})
+        else:
+            s.post(apideletefolder, data={'folder': fold.id})
+    if dirs1:
+        for f1 in dirs1:
+            s.post(apiuploadfolder,data={'folder':os.path.join(b,f1)})
+    for file in files:
+        if dirs2:
+            if file in dirs2:
+                continue
+            else:
+                s.post(apideletefile, data={'file': file.id})
+        else:
+            s.post(apideletefile, data={'file': file.id})
+    if dirs2:
+        for f2 in dirs2:
+            s.post(apiuploadfile,data={'file':os.path.join(b,f2)})
+
+
+
+class apisync(APIView):
+    def post(self,request):
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
+        folder=request.data["folder"]
+        f1 = request.data["f"]
+        opt = request.data["option"]
+        folders = Folder.objects.select_related().filter(user=user,pk=f1).first()
+        if opt=="1":
+            __sync1__(folders,folder)
+            return Response([{"status": "successful"}])
+        if opt=="2":
+            __sync2__(folders,folder)
+            return Response([{"status": "successful"}])
+        else:
+            return Response([{"status": "choose a valid option"}])
+

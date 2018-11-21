@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'^folderdeleteapi/',views.folderdeleteapi.as_view(),name='folderdeleteapi'),
     url(r'^apidownloadfolder/',views.folderdownloadapi.as_view(),name='folderdownloadapi'),
     url(r'^apidownloadfile/',views.filedownloadapi.as_view(),name='filedownloadapi'),
+    url(r'^apisync/',views.apisync.as_view(),name='filedownloadapi'),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 if settings.DEBUG:

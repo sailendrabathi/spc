@@ -61,10 +61,10 @@ else:
 
 
 apiauth = "http://" + ip + "/apiauth/"
-apiregister = "http://" + ip + "/apiregiste/r"
+apiregister = "http://" + ip + "/apiregister/"
 apilogin = "http://" + ip + "/apilogin/"
 apilogout = "http://" + ip + "/apilogout/"
-apiuploadfolder = "http://" + ip + "/folderuploadapi"
+apiuploadfolder = "http://" + ip + "/folderuploadapi/"
 apiuploadfile = "http://" + ip + "/fileuploadapi/"
 apideletefile = "http://" + ip + "/filedeleteapi/"
 apideletefolder = "http://" + ip + "/folderdeleteapi/"
@@ -96,10 +96,10 @@ def checkauth(file):
 if args.set_url:
     ip = input("Server's ip and port(format - <ip>:<port>): ")
     apiauth = "http://" + ip + "/apiauth/"
-    apiregister = "http://" + ip + "/apiregiste/r"
+    apiregister = "http://" + ip + "/apiregister/"
     apilogin = "http://" + ip + "/apilogin/"
     apilogout = "http://" + ip + "/apilogout/"
-    apiuploadfolder = "http://" + ip + "/folderuploadapi"
+    apiuploadfolder = "http://" + ip + "/folderuploadapi/"
     apiuploadfile = "http://" + ip + "/fileuploadapi/"
     apideletefile = "http://" + ip + "/filedeleteapi/"
     apideletefolder = "http://" + ip + "/folderdeleteapi/"
@@ -275,7 +275,18 @@ elif args.delete_folder:
         print("no user logged in, please log in ")
 
 elif args.sync:
-    print("not implemented")
+    if checkauth("user.txt"):
+        folder = input("folder to sync:")
+        f1 = input("lookup folder id:")
+        option = input("Choose a option 1)Merge 2)Upload to database:")
+        r = s.post(apisync,data={'folder':folder , 'f':f1,'option':option})
+        j=r.json()
+        if j[0]['status'] == "successful":
+            print("sync completed!")
+        else:
+            print("choose a valid option")
+    else:
+        print("no user logged in, please login!")
 
 elif args.show_data:
     if checkauth("user.txt"):
