@@ -310,9 +310,10 @@ elif args.show_data:
 elif args.download_file:
     if checkauth("user.txt"):
         file = input("id of the file to download: ")
+        pa = input("Path to download into: ")
         if os.path.isfile("pass.txt"):
             print("downloading file...")
-            r = s.post(apidownloadfile, data={'file': file})        #change the algo in views.py
+            r = s.post(apidownloadfile, data={'file': file,'pa':pa})        #change the algo in views.py
             j = r.json()
             if j[0]["status"] == "successful":
                 print("file download successful")
@@ -329,9 +330,10 @@ elif args.download_file:
 elif args.download_folder:
     if checkauth("user.txt"):
         folder = input("id of the folder to download: ")
+        path = input("path to which the folder to be downloaded( add '/' at last): ")
         if os.path.isfile("pass.txt"):
             print("downloading folder...")
-            r = s.post(apidownloadfolder, data={'folder': folder})
+            r = s.post(apidownloadfolder, data={'folder': folder,'pa':path})
             j = r.json()
             if j[0]["status"] == "successful":                  #change the algo in views.py
                 print("folder download successful")

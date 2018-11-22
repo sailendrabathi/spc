@@ -12,6 +12,7 @@ class Folder(models.Model) :
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     folder = models.ForeignKey('self',on_delete=models.CASCADE,null=True,related_name='children')
     name=models.CharField(max_length=250)
+    var = models.CharField(max_length=1, default='0')
     def get_absolute_url(self):
         return reverse('webclient:detail',kwargs={'pk':self.pk})
     def __str__(self):
@@ -21,6 +22,8 @@ class File(models.Model) :
     folder= models.ForeignKey(Folder, on_delete=models.CASCADE)
     name: str = models.CharField(max_length=250)
     media_file = models.FileField(default='',upload_to='webclient.FileModel/bytes/filename/mimetype',)
+    md5sum = models.CharField(max_length=250,default='0')
+    var = models.CharField(max_length=1,default='0')
     def get_absolute_url(self):
         return reverse('webclient:detail',kwargs={'pk':self.folder.id})
     def __str__(self):

@@ -12,6 +12,7 @@ from .forms import UserForm, FolderForm, FileForm
 from django.views.generic.edit import CreateView,UpdateView,DeleteView
 from django.core.files import File as file1
 from . import e_d
+import hashlib
 fu = open("urls.txt")
 ip = ""
 for line in fu:
@@ -32,6 +33,15 @@ apisync = "http://" + ip + "/apisync/"
 apidownloadfile = "http://" + ip + "/apidownloadfile/"
 apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
 # Create your views here.
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+# def md5sum(f):
+
 def index(request):
     if not request.user.is_authenticated:
         return render(request, 'webclient/login.html')
@@ -112,7 +122,10 @@ def create_file(request,folder_id) :
             folder2 = form.save(commit=False)
             # folder1.user = request.user
             folder2.folder = get_object_or_404(Folder, pk=folder_id)
+            # folder2.md5sum = md5(folder2.media_file.url)
             folder2.save()
+            # folder2.md5sum = md5("http://127.0.0.1"+folder2.media_file.url)
+            # folder2.save()
             folders = Folder.objects.select_related().filter(folder_id=folder_id)
             return render(request, 'webclient/detail.html', {'folder_id': folder_id, 'folders': folders})
         context = {
@@ -270,13 +283,14 @@ class fileuploadapi(APIView):
             print("not implemented")
         up_file1 = open("up_file.enc", "rb")
         up_file = file1(up_file1)
-        #f1 = File.objects.select_related().filter(name=name)
-        # if not f1:                                                                       ###ask whether to overwrite or to skip upload
-        #     return Response([{"status":"file_already_exists"}])
+        f1 = File.objects.select_related().filter(name=name).first()
+        if f1:                                                                       ###ask whether to overwrite or to skip upload
+            return Response([{"status":"file_already_exists","id":f1.id}])
         f = File()
         f.name = name
         f.folder = folder1
         f.media_file.save(os.path.basename(f.name), up_file, save=True)
+        f.md5sum=md5(up_file.enc)
         f.save()
         os.remove("up_file.enc")
         return Response([{"status":"successful"}])
@@ -411,6 +425,7 @@ class filedownloadapi(APIView):
         user = User.objects.get(username=username)
         all_folders = Folder.objects.select_related().filter(user=user)
         file = request.data["file"]
+        pa = request.data['pa']
         f = File.objects.select_related().filter(pk=file).first()
         if f and f.folder in all_folders:
             url = f.media_file.url
@@ -435,10 +450,10 @@ class filedownloadapi(APIView):
                     break
             if schema[0] == "AES-CBC":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
-                e_d.decrypt_file_aes(key, "down_file.enc", f.name)
+                e_d.decrypt_file_aes(key, "down_file.enc", pa+'/'+f.name)
             elif schema[0] == "AES-ECB":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
-                e_d.decrypt_file_aes1(key, "down_file.enc", f.name)
+                e_d.decrypt_file_aes1(key, "down_file.enc", pa+'/'+f.name)
             elif schema[0] == "RSA":
                 # encrypt_file_rsa()
                 print("not implemented")
@@ -501,16 +516,25 @@ class folderdownloadapi(APIView):
             break
         user = User.objects.get(username=username)
         folder = request.data["folder"]
+        pa = request.data["pa"]
         folders = Folder.objects.select_related().filter(user=user)
         f = Folder.objects.select_related().filter(pk=folder).first()
         if f in folders:
-            FD(folder , f.name+"/")
+            FD(folder , pa+f.name+"/")
             return Response([{"status":"successful"}])
         else :
             return Response([{"status":"no_folder"}])
 
 
 def __sync1__(a,b):
+    username = ""
+    f = open("user.txt")
+    for line in f:
+        for word in line.split():
+            username = word
+            break
+        break
+    user = User.objects.get(username=username)
     folders = Folder.objects.select_related().filter(folder=a)
     files = File.objects.select_related().filter(folder=a)
     dirs = os.listdir(b)
@@ -524,20 +548,20 @@ def __sync1__(a,b):
             dirs1.append(f)
     for fold in folders:
         if dirs1:
-            if fold in dirs1:
+            if fold.name in dirs1:
                 __sync1__(fold,os.path.join(b,fold))
                 dirs.remove(fold)
             else :
 
-                r = s.post(apidownloadfolder, data={'folder': fold.id})
+                r = s.post(apidownloadfolder, data={'folder': fold.id,'pa':b})
         else:
-            s.post(apidownloadfolder, data={'folder': fold.id})
+            s.post(apidownloadfolder, data={'folder': fold.id,'pa':b})
     if dirs1:
         for f1 in dirs1:
-            s.post(apiuploadfolder,data={'folder':os.path.join(b,f1)})
+            s.post(apiuploadfolder,data={'ftu':os.path.join(b,f1),'folder':a.id,'name':f1,'user':user})
     for file in files:
         if dirs2:
-            if file in dirs2:
+            if file.name in dirs2:
                 continue
             else :
                 s.post(apidownloadfile,data={'file':file.id})
@@ -545,10 +569,18 @@ def __sync1__(a,b):
             s.post(apidownloadfile,data={'file':file.id})
     if dirs2:
         for f2 in dirs2:
-            s.post(apiuploadfile,data={'file':os.path.join(b,f2)})
+            s.post(apiuploadfile, data={'file': os.path.join(b, f2), 'folder': a.id, 'name': f2})
 
 
 def __sync2__(a, b):
+    username = ""
+    f = open("user.txt")
+    for line in f:
+        for word in line.split():
+            username = word
+            break
+        break
+    user = User.objects.get(username=username)
     folders = Folder.objects.select_related().filter(folder=a)
     files = File.objects.select_related().filter(folder=a)
     dirs = os.listdir(b)
@@ -562,20 +594,19 @@ def __sync2__(a, b):
             dirs1.append(f)
     for fold in folders:
         if dirs1:
-            if fold in dirs1:
+            if fold.name in dirs1:
                 __sync1__(fold, b + fold)
                 dirs.remove(fold)
             else:
-
-                r = s.post(apideletefolder, data={'folder': fold.id})
+                r = s.post(apideletefolder, data={'folder': fold.id,'pa':b})
         else:
             s.post(apideletefolder, data={'folder': fold.id})
     if dirs1:
         for f1 in dirs1:
-            s.post(apiuploadfolder,data={'folder':os.path.join(b,f1)})
+            s.post(apiuploadfolder, data={'ftu': os.path.join(b, f1), 'folder': a.id, 'name': f1, 'user': user})
     for file in files:
         if dirs2:
-            if file in dirs2:
+            if file.name in dirs2:
                 continue
             else:
                 s.post(apideletefile, data={'file': file.id})
@@ -583,7 +614,7 @@ def __sync2__(a, b):
             s.post(apideletefile, data={'file': file.id})
     if dirs2:
         for f2 in dirs2:
-            s.post(apiuploadfile,data={'file':os.path.join(b,f2)})
+            s.post(apiuploadfile, data={'file': os.path.join(b, f2), 'folder': a.id, 'name': f2})
 
 
 
