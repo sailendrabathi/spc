@@ -5,7 +5,7 @@ app_name = 'webclient'
 
 urlpatterns= [
     url(r'^$', views.login_user, name="index1"),
-    url(r'^index$', views.index, name="index"),
+    url(r'^index/$', views.index, name="index"),
     url(r'^register/$', views.UserFormView.as_view(), name="register"),
     url(r'^login_user/$', views.login_user, name='login_user'),
     url(r'^(?P<folder_id>[0-9]+)/$', views.detail, name="detail"),

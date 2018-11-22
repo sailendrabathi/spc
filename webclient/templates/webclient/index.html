@@ -6,6 +6,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
+
+<!-- <script>
+if ( window.history.replaceState ) {
+        window.history.replaceState( null, null, window.location.href );
+    }
+</script> -->
+<body>
+  <!-- <?php  
+      session_start();  
+      if(isset($_SESSION["name"]))  
+      {  
+           if((time() - $_SESSION['last_login_timestamp']) -gt 10) // 900 = 15 * 60  
+           {  
+                header("location:logout.php");  
+           }  
+           else  
+           {  
+                $_SESSION['last_login_timestamp'] = time();  
+                echo "<h1 align='center'>".$_SESSION["name"]."</h1>";  
+                echo '<h1 align="center">'.$_SESSION['last_login_timestamp'].'</h1>';  
+                echo "<p align='center'><a href='logout.php'>Logout</a></p>";  
+           }  
+      }  
+      else  
+      {  
+           header('location:login.php');  
+      }  
+      ?>   -->
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo01" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
@@ -15,19 +44,22 @@
     <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
       <li class="nav-item active">
         <a class="nav-link" href="{% url 'webclient:index' %}">
-            Files  <span class="sr-only">(current)</span></a>
+            Root folder  <span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="{% url  'webclient:folder_add' folder_id%}">Encryption-Decryption Schema</a>
+        <a class="nav-link" href="{% url  'webclient:folder_add' folder_id%}">Create Folder</a>
       </li>
-        <form class="navbar-form navbar-right" role="search" method="get" action="#">
+            <li class="nav-item">
+        <a class="nav-link" href="{% url  'webclient:file_add' folder_id%}">Add File</a>
+      </li>
+        <!-- <form class="navbar-form navbar-right" role="search" method="get" action="#">
         <div class="form-group">
       <input class="form-control" type="text" name="q" value="">
 
         </div>
 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
 
-    </form>
+    </form> -->
         <li class="nav-item">
         <a class="nav-link" href="{% url 'webclient:logout_user' %}">
             <span class="glyphicon glyphicon-off" aria-hidden="true"></span>&nbsp; Logout</a>
@@ -51,10 +83,11 @@
 
 
 {% if all_folders %}
-    <h3>{{ folder_id }}</h3>
+    <h3>Current working directory id-({{ folder_id }})</h3>
+    <h4>Folders(folder-id)</h4>
     <ul>
         {%  for folder in all_folders %}
-            <li><a href="{% url 'webclient:detail' folder.id %}">{{ folder.name }}</a> </li>
+            <li><a href="{% url 'webclient:detail' folder.id %}">{{ folder.name }}({{folder.id}})</a> </li>
         {% endfor %}
     </ul>
 {% else %}
@@ -65,10 +98,11 @@
 {% if files %}
 <ul>
     {%  for fold in files%}
-            <li><a href="{{ fold.media_file.url }}">{{ fold.name }}</a> </li>
+            <li><a href="{{ fold.media_file.url }}">{{ fold.name }}({{fold.id}})</a> </li>
         {% endfor %}
 
 </ul>
 {% else %}
 <h4>hii</h4>
 {% endif %}
+</body>

@@ -15,29 +15,86 @@
     <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
       <li class="nav-item active">
         <a class="nav-link" href="{% url 'webclient:index' %}">
-            Files  <span class="sr-only">(current)</span></a>
+            Root folder  <span class="sr-only">(current)</span></a>
       </li>
-      <li class="nav-item">
+      <!-- <li class="nav-item">
         <a class="nav-link" href="#">Encryption-Decryption Schema</a>
-      </li>
-        <form class="navbar-form navbar-right" role="search" method="get" action="#">
+      </li> -->
+        <!-- <form class="navbar-form navbar-right" role="search" method="get" action="#">
         <div class="form-group">
       <input class="form-control" type="text" name="q" value="">
 
         </div>
 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
 
-    </form>
+    </form> -->
+
         <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link" href="{% url 'webclient:logout_user' %}">
             <span class="glyphicon glyphicon-off" aria-hidden="true"></span>&nbsp; Logout</a>
       </li>
     </ul>
 
   </div>
 </nav>
+<style>
+/* Dropdown Button */
+.dropbtn {
+    background-color: #4CAF50;
+    margin-top: 5%;
+    margin-left: 5%;
+    margin-bottom: 10%;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+}
 
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
 
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    margin-top: -10%;
+    margin-left: 5%;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {background-color: #ddd;}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {display: block;}
+
+/* Change the background color of the dropdown button when the dropdown content is shown */
+.dropdown:hover .dropbtn {background-color: #3e8e41;}
+</style>
+
+  <div class="dropdown">
+  <button class="dropbtn">Encryption-Decryption Scheme</button>
+  <div class="dropdown-content">
+    <a href="#">Link 1</a>
+    <a href="#">Link 2</a>
+    <a href="#">Link 3</a>
+  </div>
+</div>
+      
 
 
 <form class="form-horizontal" action="" method="post" enctype="multipart/form-data">
