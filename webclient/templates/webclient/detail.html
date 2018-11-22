@@ -10,6 +10,32 @@ if ( window.history.replaceState ) {
         window.history.replaceState( null, null, window.location.href );
     }
 </script>
+<script type="text/javascript">
+var inactivityTime = function () {
+    var t;
+    window.onload = resetTimer;
+    // DOM Events
+    document.onmousemove = resetTimer;
+    document.onkeypress = resetTimer;
+
+    function logout() {
+      document.getElementById("logout").click();
+        alert("You are now logged out.")
+        //location.href = 'logout.php'
+    }
+
+    function resetTimer() {
+        clearTimeout(t);
+        t = setTimeout(logout, 900000)
+        // 1000 milisec = 1 sec
+    }
+};
+inactivityTime()
+
+// if (inactivityTime()>10000) {
+//    document.getElementById("logout").click();
+// }
+</script>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo01" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +64,7 @@ if ( window.history.replaceState ) {
     </form> -->
         <li class="nav-item">
         <a class="nav-link" href="#">
-            <span class="glyphicon glyphicon-off" aria-hidden="true"></span>&nbsp; Logout</a>
+            <span class="glyphicon glyphicon-off" aria-hidden="true" id="logout"></span>&nbsp; Logout</a>
         <!-- <li class="nav-item">  <a class="nav-link" href="{% url  'webclient:file_add' folder_id%}">File Add</a></li>
       </li> -->
     </ul>
