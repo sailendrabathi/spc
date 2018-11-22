@@ -26,6 +26,7 @@ parser.add_argument("--list", action='store_true')
 parser.add_argument("--dump")
 parser.add_argument("--update", action='store_true')
 parser.add_argument("--update1")
+parser.add_argument("--status", action='store_true')
 
 args = parser.parse_args()
 
@@ -154,7 +155,15 @@ elif args.config:
         print("passwords did not match, try again")
 
 elif args.observe:
-    dir_path = input("enter directory path: ")
+    if checkauth("user.txt"):
+        if os.path.isfile("pass.txt"):
+            dir_path = input("enter path of the directory to sync(add '/' at the end): ")
+            f = open("dir_path.txt")
+            f.write(dir_path)
+        else:
+            print("no encryption schema specified, please specify/update the schema")
+    else:
+        print("no user logged in, please log in")
 
 elif args.version:
     print(ver)
@@ -324,15 +333,42 @@ elif args.delete_folder:
 
 elif args.sync:
     if checkauth("user.txt"):
-        folder = input("folder to sync:")
-        f1 = input("lookup folder id:")
-        option = input("Choose a option 1)Merge 2)Upload to database:")
-        r = s.post(apisync,data={'folder':folder , 'f':f1,'option':option})
-        j=r.json()
-        if j[0]['status'] == "successful":
-            print("sync completed!")
+        if os.path.isfile("dir_path.txt"):
+            folder = ""
+            fr = open("dir_path.txt", 'r')
+            for line in fr:
+                for word in line.split():
+                    folder = word
+                    break
+                break
+            f1 = input("sync with folder id: ")
+            option = input("Choose a option(1 or 2) 1.Merge 2.Overwrite: ")
+            if option == "1" or option == "2":
+                print("syncing...")
+                r = s.post(apisync, data={'folder': folder, 'f': f1, 'option': option})
+                j = r.json()
+                if j[0]['status'] == "successful":
+                    print("sync completed")
+                else:
+                    print("sync failed, please try again")
+            else:
+                print("Invalid option")
         else:
-            print("choose a valid option")
+            folder = input("enter path of the directory to sync(add '/' at the end): ")
+            f1 = input("sync with folder id: ")
+            option = input("Choose a option(1 or 2) 1.Merge 2.Overwrite: ")
+            if option == "1" or option == "2":
+                print("syncing...")
+                r = s.post(apisync, data={'folder': folder, 'f': f1, 'option': option})
+                j = r.json()
+                if j[0]['status'] == "successful":
+                    fr = open("dir_path.txt", 'w')
+                    fr.write(folder)
+                    print("sync completed")
+                else:
+                    print("sync failed, please try again")
+            else:
+                print("Invalid option")
     else:
         print("no user logged in, please login!")
 
@@ -380,7 +416,7 @@ elif args.download_folder:
                 print("downloading folder...")
                 r = s.post(apidownloadfolder, data={'folder': folder,'path':path})
                 j = r.json()
-                if j[0]["status"] == "successful":                  
+                if j[0]["status"] == "successful":
                     print("folder download successful")
                 elif j[0]["status"] == "no_folder":
                     print("no file with id", folder)
@@ -401,18 +437,28 @@ elif args.info:
 elif args.list:
     print("Supported encryption schemes:")
     print("1. AES-CBC")
-    print("2. RSA")
+    print("2. AES-OFB")
     print("3. AES-ECB")
 
 elif args.update:
     if checkauth("user.txt"):
         schema = input("Schema: ")
-        if schema == "RSA":
-            pub_key = input("Public Key(4096 bits): ")
-            pri_key = input("Private Key(4096 bits): ")
-            f = open("pass.txt", 'w')
-            f.write(schema + '\n' + pub_key + '\n' + pri_key)
-            print("update completed")
+        if schema == "AES_OFB":
+            key = input("Key: ")
+            if os.path.isfile("pass.txt"):
+                print("updating...")
+                r = s.post(apiupdate, data={'schema': schema, 'key': key})
+                j = r.json()
+                if j[0]["status"] == "successful":
+                    f = open("pass.txt", 'w')
+                    f.write(schema + '\n' + key)
+                    print("update completed")
+                else:
+                    print("update failed")
+            else:
+                f = open("pass.txt", 'w')
+                f.write(schema + '\n' + key)
+                print("update completed")
         elif schema == "AES-CBC":
             key = input("Key: ")
             if os.path.isfile("pass.txt"):
@@ -473,12 +519,21 @@ elif args.update1:
                 for word in line.split():
                     new_schema.append(word)
                     break
-            if new_schema[0] == "RSA":
-                pub_key = new_schema[1]
-                pri_key = new_schema[2]
-                f = open("pass.txt", 'w')
-                f.write(new_schema[0] + '\n' + pub_key + '\n' + pri_key)
-                print("update completed")
+            if new_schema[0] == "AES-OFB":
+                if os.path.isfile("pass.txt"):
+                    print("updating...")
+                    r = s.post(apiupdate, data={'schema': new_schema[0], 'key': new_schema[1]})
+                    j = r.json()
+                    if j[0]["status"] == "successful":
+                        f = open("pass.txt", 'w')
+                        f.write(new_schema[0] + '\n' + new_schema[1])
+                        print("update completed")
+                    else:
+                        print("update failed")
+                else:
+                    f = open("pass.txt", 'w')
+                    f.write(new_schema[0] + '\n' + new_schema[1])
+                    print("update completed")
             elif new_schema[0] == "AES-CBC":
                 if os.path.isfile("pass.txt"):
                     print("updating...")
@@ -516,4 +571,5 @@ elif args.update1:
     else:
         print("no user logged in, please log in ")
 
-
+elif args.status:
+    print("not implemented")

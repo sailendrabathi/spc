@@ -19,71 +19,73 @@ OPTIONS
 			Output the manual for spc. 
 
 		version
-			Output the version number of spc
+			Output the version number of spc.
 
 	Function Selection
 
 		set-url
-			Set the api-urls to refer to server by taking ip address and port number as input from command line
+			Set the api-urls to refer to server by taking ip address and port number as input from command line.
 
 			Input format should be ip:port
 				e.g :- 127.0.0.1:8000  
 
 		signup
-			Create a new account for user by asking required information as input
+			Create a new account for user by asking required information as input.
 
 		login
-			Log in a user into the database by asking his username and password as input  		
+			Log in a user into the database by asking his username and password as input.  		
 
 		logout
-			Log out the already logged in user. Prints "no user logged in" if there is no active login
+			Log out the already logged in user. Prints "no user logged in" if there is no active login.
 
 		config
-			Configure the locally stored user login data
+			Configure the locally stored user login data.
 
 		show_data
-			Display the user's files and folders in a heirarchical manner along with their ids
+			Display the user's files and folders in a heirarchical manner along with their ids.
 
 		upload_file
-			Upload a file preset locally to the server's database by taking id of the parent folder in server, name of the file(which is being uploaded) shown in the server, path of the file in local machine as input 
+			Upload a file preset locally to the server's database by taking id of the parent folder in server, name of the file(which is being uploaded) shown in the server, path of the file in local machine as input. 
 
 		upload_folder
-			Upload a folder present locally to the server's database by taking id of the parent folder in server, path of the folder in local machine("/" is necessary at the end of the folder path)
+			Upload a folder present locally to the server's database by taking id of the parent folder in server, path of the folder in local machine("/" is necessary at the end of the folder path).
 
 		download_file
-			Download a file belonging to the user present in the server's database by taking file id as input             (implementation may change)
+			Download a file belonging to the user present in the server's database by taking file id and path to download into as input.
 
 		download_folder
-			Download a folder belonging to the user present in the server's database by taking folder id as Input     	  (implementation may change)
+			Download a folder belonging to the user present in the server's database by taking folder id and path to download into as input.     	  
 
 		delete_file
-			Delete a file belonging to the user present in the server's database by taking file id as input 
+			Delete a file belonging to the user present in the server's database by taking file id as input. 
 
 		delete_folder
-			Delete a folder belonging to the user present in the server's database by taking folder id as input
+			Delete a folder belonging to the user present in the server's database by taking folder id as input.
 
 		en-de
 
 			list
-				List the available encryption schemes
+				List the available encryption schemes.
 
 			update
-				Update the current encryption scheme by taking type of the schema and its corresponding keys as input 
+				Update the current encryption scheme by taking type of the schema and its corresponding keys as input. 
 
 			update [FILE PATH]
-				Update the current encryption scheme from a local file specified by [FILE PATH]
+				Update the current encryption scheme from a local file specified by [FILE PATH].
 
 			dump [FILE PATH]
-				Write the current encryption scheme into a local file specified by [FILE PATH]
+				Write the current encryption scheme into a local file specified by [FILE PATH].
 
 		observe
-			Observe a local directory for synchronization by taking the direcory path as input                            (implementation may change)
+			Observe a local directory for synchronization by taking the direcory path as input.                            
 		
 		sync
-			Syncchronize the observed directory with the one present in the server's database                             (implemantation may change)
+			Synchronize the observed directory with the one present in the server's database.
+
+			There are two options available '1' and '2'. Option '1' merges the observed local directory with the one in the server and same happens for the one in the server too. Option '2' overwrites the copy in server with the local observed directory.
 
 		status
-			Print the status of the observed directory																	  (implementation may change) 			
+			Print the status of the observed directory.		 			
 
 
 

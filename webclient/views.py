@@ -1,5 +1,6 @@
 import os
 import hashlib
+from threading import Condition
 import requests
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
@@ -278,9 +279,9 @@ class fileuploadapi(APIView):
         elif schema[0] == "AES-ECB":
             key = hashlib.sha256(schema[1].encode('utf-8')).digest()
             e_d.encrypt_file_aes1(key, file, "up_file.enc")
-        elif schema[0] == "RSA":
-            #encrypt_file_rsa()
-            print("not implemented")
+        elif schema[0] == "AES-OFB":
+            key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+            e_d.encrypt_file_aes2(key, file, "up_file.enc")
         up_file1 = open("up_file.enc", "rb")
         up_file = file1(up_file1)
         f1 = File.objects.select_related().filter(name=name, folder=folder).first()
@@ -314,9 +315,9 @@ def UF(folder,id,name,user):
             elif schema[0] == "AES-ECB":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
                 e_d.encrypt_file_aes1(key, ele, "up_file.enc")
-            elif schema[0] == "RSA":
-                # encrypt_file_rsa()
-                print("not implemented")
+            elif schema[0] == "AES-OFB":
+                key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                e_d.encrypt_file_aes2(key, file, "up_file.enc")
             up_file1 = open("up_file.enc","rb")
             up_file = file1(up_file1)
             f=File()
@@ -458,9 +459,9 @@ class filedownloadapi(APIView):
             elif schema[0] == "AES-ECB":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
                 e_d.decrypt_file_aes1(key, "down_file.enc", pa+f.name)
-            elif schema[0] == "RSA":
-                # encrypt_file_rsa()
-                print("not implemented")
+            elif schema[0] == "AES-OFB":
+                key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                e_d.decrypt_file_aes2(key, "down_file.enc", pa + f.name)
             os.remove("down_file.enc")
             return Response([{"status": "successful"}])
         else:
@@ -503,9 +504,9 @@ def FD(folder,path):
         elif schema[0] == "AES-ECB":
             key = hashlib.sha256(schema[1].encode('utf-8')).digest()
             e_d.decrypt_file_aes1(key, "down_file.enc", path+ele.name)
-        elif schema[0] == "RSA":
-            # encrypt_file_rsa()
-            print("not implemented")
+        elif schema[0] == "AES-OFB":
+            key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+            e_d.decrypt_file_aes2(key, "down_file.enc", path + ele.name)
         os.remove("down_file.enc")
     return Response([{"status": "successful"}])
 
@@ -531,6 +532,7 @@ class folderdownloadapi(APIView):
 
 
 def __sync1__(a,b):
+    next=Condition()
     username = ""
     f = open("user.txt")
     for line in f:
@@ -541,6 +543,12 @@ def __sync1__(a,b):
     user = User.objects.get(username=username)
     folders = Folder.objects.select_related().filter(folder=a)
     files = File.objects.select_related().filter(folder=a)
+    if(a.var=='1'):
+        next.wait()
+    else:
+        next.acquire()
+        a.var='1'
+        a.save()
     dirs = os.listdir(b)
     s = requests.session()
     dirs1=[]
@@ -553,30 +561,38 @@ def __sync1__(a,b):
     for fold in folders:
         if dirs1:
             if fold.name in dirs1:
-                __sync1__(fold,os.path.join(b,fold))
+                __sync1__(fold,b+fold.name+"/")
                 dirs.remove(fold)
             else :
 
-                r = s.post(apidownloadfolder, data={'folder': fold.id,'pa':b})
+                r = s.post(apidownloadfolder, data={'folder': fold.id,'path':b})
         else:
-            s.post(apidownloadfolder, data={'folder': fold.id,'pa':b})
+            s.post(apidownloadfolder, data={'folder': fold.id,'path':b})
     if dirs1:
         for f1 in dirs1:
-            s.post(apiuploadfolder,data={'ftu':os.path.join(b,f1),'folder':a.id,'name':f1,'user':user})
+            r=s.post(apiuploadfolder,data={'ftu':b+f1+"/",'folder':a.id,'name':f1,'user':user})
     for file in files:
         if dirs2:
             if file.name in dirs2:
-                continue
+                if file.md5sum==md5(os.path.join(b,file.name)):
+                    dirs2.remove(file.name)
+                    continue
             else :
-                s.post(apidownloadfile,data={'file':file.id})
+                r=s.post(apideletefile,data={'file':file.id})
+                r=s.post(apiuploadfile,data={'file':os.path.join(b,file.name),'folder':a.id,'name':file.name})
+                dirs2.remove(file.name)
         else:
-            s.post(apidownloadfile,data={'file':file.id})
+            r=s.post(apidownloadfile,data={'file':file.id,'path':b})
     if dirs2:
         for f2 in dirs2:
-            s.post(apiuploadfile, data={'file': os.path.join(b, f2), 'folder': a.id, 'name': f2})
+            r=s.post(apiuploadfile, data={'file': b+f2, 'folder': a.id, 'name': f2})
+    a.var=0
+    a.save()
+    next.release()
 
 
 def __sync2__(a, b):
+    next=Condition()
     username = ""
     f = open("user.txt")
     for line in f:
@@ -587,6 +603,12 @@ def __sync2__(a, b):
     user = User.objects.get(username=username)
     folders = Folder.objects.select_related().filter(folder=a)
     files = File.objects.select_related().filter(folder=a)
+    if(a.var==1):
+        next.wait()
+    else:
+        next.acquire()
+        a.var=1
+        a.save()
     dirs = os.listdir(b)
     s = requests.session()
     dirs1 = []
@@ -599,26 +621,32 @@ def __sync2__(a, b):
     for fold in folders:
         if dirs1:
             if fold.name in dirs1:
-                __sync1__(fold, b + fold)
-                dirs.remove(fold)
+                __sync1__(fold, b + fold.name+"/")
+                dirs.remove(fold.name)
             else:
-                r = s.post(apideletefolder, data={'folder': fold.id,'pa':b})
+                r = s.post(apideletefolder, data={'folder': fold.id})
         else:
             s.post(apideletefolder, data={'folder': fold.id})
     if dirs1:
         for f1 in dirs1:
-            s.post(apiuploadfolder, data={'ftu': os.path.join(b, f1), 'folder': a.id, 'name': f1, 'user': user})
+            s.post(apiuploadfolder, data={'ftu': b+f1+"/", 'folder': a.id, 'name': f1, 'user': user})
     for file in files:
         if dirs2:
-            if file.name in dirs2:
+            if file.md5sum==md5(os.path.join(b,file.name)):
+                dirs2.remove(file.name)
                 continue
-            else:
-                s.post(apideletefile, data={'file': file.id})
+            else :
+                r=s.post(apideletefile,data={'file':file.id})
+                r=s.post(apiuploadfile,data={'file':os.path.join(b,file.name),'folder':a.id,'name':file.name})
+                dirs2.remove(file.name)
         else:
             s.post(apideletefile, data={'file': file.id})
     if dirs2:
         for f2 in dirs2:
             s.post(apiuploadfile, data={'file': os.path.join(b, f2), 'folder': a.id, 'name': f2})
+    a.var = 0
+    a.save()
+    next.release()
 
 
 
@@ -635,7 +663,7 @@ class apisync(APIView):
         folder=request.data["folder"]
         f1 = request.data["f"]
         opt = request.data["option"]
-        folders = Folder.objects.select_related().filter(user=user,pk=f1).first()
+        folders = Folder.objects.select_related().filter(pk=f1).first()
         if opt=="1":
             __sync1__(folders,folder)
             return Response([{"status": "successful"}])
@@ -689,9 +717,9 @@ class apiupdate(APIView):
                 elif schema[0] == "AES-ECB":
                     key = hashlib.sha256(schema[1].encode('utf-8')).digest()
                     e_d.decrypt_file_aes1(key, "temp.enc", "temp1.dec")
-                elif schema[0] == "RSA":
-                    # encrypt_file_rsa()
-                    print("not implemented")
+                elif schema[0] == "AES-OFB":
+                    key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                    e_d.decrypt_file_aes2(key, "temp.enc", "temp1.dec")
                 if new_schema == "AES-CBC":
                     new_key1 = str(new_key)
                     new_key1 = hashlib.sha256(new_key1.encode('utf-8')).digest()
@@ -700,10 +728,10 @@ class apiupdate(APIView):
                     new_key1 = str(new_key)
                     new_key1 = hashlib.sha256(new_key1.encode('utf-8')).digest()
                     e_d.encrypt_file_aes1(new_key1, "temp1.dec", "temp3.enc")
-                elif new_schema == "RSA":
+                elif new_schema == "AES-OFB":
                     new_key1 = str(new_key)
                     new_key1 = hashlib.sha256(new_key1.encode('utf-8')).digest()
-                    e_d.encrypt_file_rsa(new_key1, "temp1.dec", "temp3.enc")
+                    e_d.encrypt_file_aes2(new_key1, "temp1.dec", "temp3.enc")
                 up_file1 = open("temp3.enc", "rb")
                 up_file = file1(up_file1)
                 f = File()
