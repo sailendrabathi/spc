@@ -747,4 +747,85 @@ class apiupdate(APIView):
 
         return Response([{"status": "successful"}])
 
+def status(folderser,folder):
+    folders = Folder.objects.select_related().filter(folder=folderser)
+    files = File.objects.select_related().filter(folder=folderser)
+    dirs = os.listdir(folder)
+    # s = requests.session()
+    dirs1 = []
+    dirs2 = []
+    insync={}
+    for f in dirs:
+        if os.path.isfile(os.path.join(folder, f)):
+            dirs2.append(f)
+        else:
+            dirs1.append(f)
+    for fold in dirs1:
+        if Folder.objects.select_related().filter(name=fold):
+            insync[fold]=status(Folder.objects.select_related().filter(name=fold).first(),folder+fold+"/")
+        else:
+            insync[fold]="not in-sync"
+    for file in dirs2:
+        if File.objects.select_related().filter(name=file):
+            f=File.objects.select_related().filter(name=file).first()
+            if f.md5sum==md5(folder+file):
+                insync[file]="in-sync"
+            else:
+                insync[file]="not in-sync"
+        else:
+            insync[file] = "not in-sync"
+    return insync
+
+def status1(folderser,folder):
+    folders = Folder.objects.select_related().filter(folder=folderser)
+    files = File.objects.select_related().filter(folder=folderser)
+    dirs = os.listdir(folder)
+    # s = requests.session()
+    dirs1 = []
+    dirs2 = []
+    insync={}
+    for f in dirs:
+        if os.path.isfile(os.path.join(folder, f)):
+            dirs2.append(f)
+        else:
+            dirs1.append(f)
+    for fold in folders:
+        if fold.name in dirs1:
+            insync[fold.name]=status(fold,folder+fold.name+"/")
+        else:
+            insync[fold.name]="not in-sync"
+    for file in files:
+        if file.name in files:
+            if file.md5sum==md5(folder+file.name):
+                insync[file.name]="in-sync"
+            else:
+                insync[file.name]="not in-sync"
+        else:
+            insync[file.name] = "not in-sync"
+    return insync
+
+class apistatus(APIView):
+    def post(self, request):
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
+        folder = request.data["folder"]
+        f1 = request.data["f"]
+        folders = Folder.objects.select_related().filter(pk=f1,user=user).first()
+        r=status(folders,folder)
+        r1=status1(folders,folder)
+        result=[]
+        result.append(r)
+        result.append(r1)
+        return Response(result)
+
+
+
+
+
 
