@@ -74,6 +74,7 @@ apisync = "http://" + ip + "/apisync/"
 apidownloadfile = "http://" + ip + "/apidownloadfile/"
 apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
 apiupdate = "http://" + ip + "/apiupdate/"
+apistatus = "http://" + ip + "/apistatus/"
 
 def checkauth(file):
     if not os.path.isfile(file):
@@ -108,6 +109,7 @@ if args.set_url:
     apidownloadfile = "http://" + ip + "/apidownloadfile/"
     apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
     apiupdate = "http://" + ip + "/apiupdate/"
+    apistatus = "http://" + ip + "/apistatus/"
     f = open("urls.txt", 'w')
     f.write(ip)
     print("address set to :", ip)
@@ -572,4 +574,38 @@ elif args.update1:
         print("no user logged in, please log in ")
 
 elif args.status:
-    print("not implemented")
+    if checkauth("user.txt"):
+        if os.path.isfile("dir_path.txt"):
+            folder = ""
+            fr = open("dir_path.txt", 'r')
+            for line in fr:
+                for word in line.split():
+                    folder = word
+                    break
+                break
+            f1 = input("sync with folder id: ")
+            try:
+                r = s.post(apistatus, data={"f": f1, "folder": folder})
+                j = r.json()
+                pp = pprint.PrettyPrinter(indent=1)
+                print("status of the local observed directory")
+                pp.pprint(j[0])
+                print("status of the corresponding directory in server")
+                pp.pprint(j[1])
+            except:
+                print("fetching status failed, try again")
+        else:
+            folder = input("enter path of the directory to sync(add '/' at the end): ")
+            f1 = input("sync with folder id: ")
+            try:
+                r = s.post(apistatus, data={"f": f1, "folder": folder})
+                j = r.json()
+                pp = pprint.PrettyPrinter(indent=1)
+                print("status of the local observed directory")
+                pp.pprint(j[0])
+                print("status of the corresponding directory in server")
+                pp.pprint(j[1])
+            except:
+                print("fetching status failed, try again")
+    else:
+        print("no user logged in, please log in ")
