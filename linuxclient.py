@@ -160,7 +160,7 @@ elif args.observe:
     if checkauth("user.txt"):
         if os.path.isfile("pass.txt"):
             dir_path = input("enter path of the directory to sync(add '/' at the end): ")
-            f = open("dir_path.txt")
+            f = open("dir_path.txt","w")
             f.write(dir_path)
         else:
             print("no encryption schema specified, please specify/update the schema")

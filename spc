@@ -2,10 +2,10 @@
 
 if [ $# -eq 1 ] 
 then
-	if [ $1 == "signup" ] || [ $1 == "login" ] || [ $1 == "logout" ]; then
+	if [ $1 == "signup" ] || [ $1 == "login" ] || [ $1 == "set_url" ] || [ $1 == "logout" ]; then
 		python3 linuxclient.py "--"$@
 		touch user.txt
-	elif [ $1 == "upload_file" ] || [ $1 == "set_url" ] || [ $1 == "upload_folder" ] || [ $1 == "delete_file" ] || [ $1 == "delete_folder" ] || [ $1 == "sync" ] || [ $1 == "show_data" ] || [ $1 == "config" ]; then
+	elif [ $1 == "upload_file" ] || [ $1 == "upload_folder" ] || [ $1 == "delete_file" ] || [ $1 == "delete_folder" ] || [ $1 == "sync" ] || [ $1 == "show_data" ] || [ $1 == "config" ]; then
 		tym=$(( $(date +%s) - $(stat -c%X user.txt) ))
 		if [ $tym -gt 900 ]; then
 			rm user.txt
