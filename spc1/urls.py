@@ -39,6 +39,7 @@ urlpatterns = [
     url(r'^apidownloadfolder/',views.folderdownloadapi.as_view(),name='folderdownloadapi'),
     url(r'^apidownloadfile/',views.filedownloadapi.as_view(),name='filedownloadapi'),
     url(r'^apisync/',views.apisync.as_view(),name='filedownloadapi'),
+    url(r'^apiupdate/',views.apiupdate.as_view(),name='updateapi'),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 if settings.DEBUG:

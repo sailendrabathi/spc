@@ -72,7 +72,7 @@ apishowdata = "http://" + ip + "/apishowdata/"
 apisync = "http://" + ip + "/apisync/"
 apidownloadfile = "http://" + ip + "/apidownloadfile/"
 apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
-
+apiupdate = "http://" + ip + "/apiupdate/"
 
 def checkauth(file):
     if not os.path.isfile(file):
@@ -106,6 +106,7 @@ if args.set_url:
     apisync = "http://" + ip + "/apisync/"
     apidownloadfile = "http://" + ip + "/apidownloadfile/"
     apidownloadfolder = "http://" + ip + "/apidownloadfolder/"
+    apiupdate = "http://" + ip + "/apiupdate/"
     f = open("urls.txt", 'w')
     f.write(ip)
     print("address set to :", ip)
@@ -213,6 +214,26 @@ elif args.upload_file:
                 j = r.json()
                 if j[0]["status"] == "successful":
                     print("file upload successful")
+                elif j[0]["status"] == "file_already_exists":
+                    print("File with", name, "already exists.")
+                    conf = input("Do you wish to overwrite?(Y/n): ")
+                    if conf == "Y" or conf == "y":
+                        print("uploading file...")
+                        r = s.post(apideletefile, data={'file': j[0]["id"]})
+                        j = r.json()
+                        if j[0]["status"] == "successful":
+                            r = s.post(apiuploadfile, data={'folder': folder, 'name': name, 'file': file})
+                            j = r.json()
+                            if j[0]["status"] == "successful":
+                                print("file upload successful")
+                            else:
+                                print("file upload failed, try again")
+                        else:
+                            print("file upload failed, try again")
+                    elif conf == "N" or conf == "n":
+                        print("file upload cancelled")
+                    else:
+                        print("Invalid option, file upload cancelled")
                 else:
                     print("file upload failed, try again")
             else:
@@ -241,6 +262,26 @@ elif args.upload_folder:
                 j = r.json()
                 if j[0]["status"] == "successful":
                     print("folder upload successful")
+                elif j[0]["status"] == "folder_already_exists":
+                    print("Folder with", name, "already exists.")
+                    conf = input("Do you wish to overwrite?(Y/n): ")
+                    if conf == "Y" or conf == "y":
+                        print("uploading folder...")
+                        r = s.post(apideletefolder, data={'folder': j[0]["id"]})
+                        j = r.json()
+                        if j[0]["status"] == "successful":
+                            r = s.post(apiuploadfolder, data={'folder': folder, 'name': name, 'ftu': ftu,'user': username})
+                            j = r.json()
+                            if j[0]["status"] == "successful":
+                                print("folder upload successful")
+                            else:
+                                print("folder upload failed, try again")
+                        else:
+                            print("folder upload failed, try again")
+                    elif conf == "N" or conf == "n":
+                        print("folder upload cancelled")
+                    else:
+                        print("Invalid option, folder upload cancelled")
                 else:
                     print("folder upload failed, try again")
             else:
@@ -310,19 +351,22 @@ elif args.show_data:
 elif args.download_file:
     if checkauth("user.txt"):
         file = input("id of the file to download: ")
-        pa = input("Path to download into: ")
-        if os.path.isfile("pass.txt"):
-            print("downloading file...")
-            r = s.post(apidownloadfile, data={'file': file,'pa':pa})        #change the algo in views.py
-            j = r.json()
-            if j[0]["status"] == "successful":
-                print("file download successful")
-            elif j[0]["status"] == "no_file":
-                print("no file with id", file)
+        pa = input("Path to download into(add '/' at the end): ")
+        if os.path.isdir(pa):
+            if os.path.isfile("pass.txt"):
+                print("downloading file...")
+                r = s.post(apidownloadfile, data={'file': file,'path':pa})
+                j = r.json()
+                if j[0]["status"] == "successful":
+                    print("file download successful")
+                elif j[0]["status"] == "no_file":
+                    print("no file with id", file)
+                else:
+                    print("file download failed, try again")
             else:
-                print("file download failed, try again")
+                print("no encryption schema specified, please specify/update the schema")
         else:
-            print("no encryption schema specified, please specify/update the schema")
+            print("no such directory", pa)
     else:
         print("no user logged in, please log in ")
 
@@ -330,19 +374,22 @@ elif args.download_file:
 elif args.download_folder:
     if checkauth("user.txt"):
         folder = input("id of the folder to download: ")
-        path = input("path to which the folder to be downloaded( add '/' at last): ")
-        if os.path.isfile("pass.txt"):
-            print("downloading folder...")
-            r = s.post(apidownloadfolder, data={'folder': folder,'pa':path})
-            j = r.json()
-            if j[0]["status"] == "successful":                  #change the algo in views.py
-                print("folder download successful")
-            elif j[0]["status"] == "no_folder":
-                print("no file with id", folder)
+        path = input("path to download into(add '/' at the end): ")
+        if os.path.isdir(path):
+            if os.path.isfile("pass.txt"):
+                print("downloading folder...")
+                r = s.post(apidownloadfolder, data={'folder': folder,'path':path})
+                j = r.json()
+                if j[0]["status"] == "successful":                  
+                    print("folder download successful")
+                elif j[0]["status"] == "no_folder":
+                    print("no file with id", folder)
+                else:
+                    print("folder download failed, try again")
             else:
-                print("folder download failed, try again")
+                print("no encryption schema specified, please specify/update the schema")
         else:
-            print("no encryption schema specified, please specify/update the schema")
+            print("no such directory", path)
     else:
         print("no user logged in, please log in ")
 
@@ -362,20 +409,42 @@ elif args.update:
         schema = input("Schema: ")
         if schema == "RSA":
             pub_key = input("Public Key(4096 bits): ")
-            pri_key = input("Private Key(4096 bits): ")                     ##encrypt and pass
+            pri_key = input("Private Key(4096 bits): ")
             f = open("pass.txt", 'w')
-            f.write(schema + '\n' + pub_key + '\n' + pri_key)               ##sync is required
+            f.write(schema + '\n' + pub_key + '\n' + pri_key)
             print("update completed")
         elif schema == "AES-CBC":
             key = input("Key: ")
-            f = open("pass.txt", 'w')
-            f.write(schema + '\n' + key)
-            print("update completed")
+            if os.path.isfile("pass.txt"):
+                print("updating...")
+                r = s.post(apiupdate, data={'schema': schema, 'key': key})
+                j = r.json()
+                if j[0]["status"] == "successful":
+                    f = open("pass.txt", 'w')
+                    f.write(schema + '\n' + key)
+                    print("update completed")
+                else:
+                    print("update failed")
+            else:
+                f = open("pass.txt", 'w')
+                f.write(schema + '\n' + key)
+                print("update completed")
         elif schema == "AES-ECB":
             key = input("Key: ")
-            f = open("pass.txt", 'w')
-            f.write(schema + '\n' + key)
-            print("update completed")
+            if os.path.isfile("pass.txt"):
+                print("updating...")
+                r = s.post(apiupdate, data={'schema': schema, 'key': key})
+                j = r.json()
+                if j[0]["status"] == "successful":
+                    f = open("pass.txt", 'w')
+                    f.write(schema + '\n' + key)
+                    print("update completed")
+                else:
+                    print("update failed")
+            else:
+                f = open("pass.txt", 'w')
+                f.write(schema + '\n' + key)
+                print("update completed")
         else:
             print("Invalid Schema, use \"spc list\" to list supported schemes")
     else:
@@ -398,11 +467,50 @@ elif args.dump:
 elif args.update1:
     if checkauth("user.txt"):
         if os.path.isfile(args.update1):
-            f0 = open("pass.txt", 'w')                                      ##sync is required
-            f = open(args.update1, 'r')
-            for line in f:                                                  ##encrypt amd pass (only pass.txt)
-                f0.write(line)
-            print('update completed')
+            new_schema = []
+            fa = open(args.update1, 'r')
+            for line in fa:
+                for word in line.split():
+                    new_schema.append(word)
+                    break
+            if new_schema[0] == "RSA":
+                pub_key = new_schema[1]
+                pri_key = new_schema[2]
+                f = open("pass.txt", 'w')
+                f.write(new_schema[0] + '\n' + pub_key + '\n' + pri_key)
+                print("update completed")
+            elif new_schema[0] == "AES-CBC":
+                if os.path.isfile("pass.txt"):
+                    print("updating...")
+                    r = s.post(apiupdate, data={'schema': new_schema[0], 'key': new_schema[1]})
+                    j = r.json()
+                    if j[0]["status"] == "successful":
+                        f = open("pass.txt", 'w')
+                        f.write(new_schema[0] + '\n' + new_schema[1])
+                        print("update completed")
+                    else:
+                        print("update failed")
+                else:
+                    f = open("pass.txt", 'w')
+                    f.write(new_schema[0] + '\n' + new_schema[1])
+                    print("update completed")
+            elif new_schema[0] == "AES-ECB":
+                if os.path.isfile("pass.txt"):
+                    print("updating...")
+                    r = s.post(apiupdate, data={'schema': new_schema[0], 'key': new_schema[1]})
+                    j = r.json()
+                    if j[0]["status"] == "successful":
+                        f = open("pass.txt", 'w')
+                        f.write(new_schema[0] + '\n' + new_schema[1])
+                        print("update completed")
+                    else:
+                        print("update failed")
+                else:
+                    f = open("pass.txt", 'w')
+                    f.write(new_schema[0] + '\n' + new_schema[1])
+                    print("update completed")
+            else:
+                print("Invalid Schema, use \"spc list\" to list supported schemes")
         else:
             print("update failed, no such file", args.update1)
     else:

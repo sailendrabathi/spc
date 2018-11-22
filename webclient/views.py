@@ -283,14 +283,14 @@ class fileuploadapi(APIView):
             print("not implemented")
         up_file1 = open("up_file.enc", "rb")
         up_file = file1(up_file1)
-        f1 = File.objects.select_related().filter(name=name).first()
+        f1 = File.objects.select_related().filter(name=name, folder=folder).first()
         if f1:                                                                       ###ask whether to overwrite or to skip upload
             return Response([{"status":"file_already_exists","id":f1.id}])
         f = File()
         f.name = name
         f.folder = folder1
         f.media_file.save(os.path.basename(f.name), up_file, save=True)
-        f.md5sum=md5(up_file.enc)
+        f.md5sum=md5(file)
         f.save()
         os.remove("up_file.enc")
         return Response([{"status":"successful"}])
@@ -323,6 +323,7 @@ def UF(folder,id,name,user):
             f.name = element
             f.folder=fold
             f.media_file.save(os.path.basename(element),up_file,save=True)
+            f.md5sum = md5(ele)
             f.save()
             os.remove("up_file.enc")
         elif os.path.isdir(ele):
@@ -339,6 +340,9 @@ class folderuploadapi(APIView):
         ftu = request.data["ftu"]
         username = request.data["user"]                                         ###ask whether to overwrite or to skip upload
         user = User.objects.get(username=username)
+        f = Folder.objects.select_related().filter(folder=folder, name=name).first()
+        if f:
+            return Response([{"status":"folder_already_exists","id":f.id}])
         UF(ftu,folder,name,user)
         return Response([{"status":"successful"}])
 
@@ -425,7 +429,7 @@ class filedownloadapi(APIView):
         user = User.objects.get(username=username)
         all_folders = Folder.objects.select_related().filter(user=user)
         file = request.data["file"]
-        pa = request.data['pa']
+        pa = request.data["path"]
         f = File.objects.select_related().filter(pk=file).first()
         if f and f.folder in all_folders:
             url = f.media_file.url
@@ -450,10 +454,10 @@ class filedownloadapi(APIView):
                     break
             if schema[0] == "AES-CBC":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
-                e_d.decrypt_file_aes(key, "down_file.enc", pa+'/'+f.name)
+                e_d.decrypt_file_aes(key, "down_file.enc", pa+f.name)
             elif schema[0] == "AES-ECB":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
-                e_d.decrypt_file_aes1(key, "down_file.enc", pa+'/'+f.name)
+                e_d.decrypt_file_aes1(key, "down_file.enc", pa+f.name)
             elif schema[0] == "RSA":
                 # encrypt_file_rsa()
                 print("not implemented")
@@ -495,10 +499,10 @@ def FD(folder,path):
                 break
         if schema[0] == "AES-CBC":
             key = hashlib.sha256(schema[1].encode('utf-8')).digest()
-            e_d.decrypt_file_aes(key, "down_file.enc", path+"/"+ele.name)
+            e_d.decrypt_file_aes(key, "down_file.enc", path+ele.name)
         elif schema[0] == "AES-ECB":
             key = hashlib.sha256(schema[1].encode('utf-8')).digest()
-            e_d.decrypt_file_aes1(key, "down_file.enc", path+"/"+ele.name)
+            e_d.decrypt_file_aes1(key, "down_file.enc", path+ele.name)
         elif schema[0] == "RSA":
             # encrypt_file_rsa()
             print("not implemented")
@@ -516,13 +520,13 @@ class folderdownloadapi(APIView):
             break
         user = User.objects.get(username=username)
         folder = request.data["folder"]
-        pa = request.data["pa"]
+        pa = request.data["path"]
         folders = Folder.objects.select_related().filter(user=user)
         f = Folder.objects.select_related().filter(pk=folder).first()
         if f in folders:
             FD(folder , pa+f.name+"/")
             return Response([{"status":"successful"}])
-        else :
+        else:
             return Response([{"status":"no_folder"}])
 
 
@@ -640,4 +644,79 @@ class apisync(APIView):
             return Response([{"status": "successful"}])
         else:
             return Response([{"status": "choose a valid option"}])
+
+
+
+class apiupdate(APIView):
+    def post(self,request):
+        new_schema = request.data["schema"]
+        new_key = request.data["key"]
+        username = ""
+        f = open("user.txt")
+        for line in f:
+            for word in line.split():
+                username = word
+                break
+            break
+        user = User.objects.get(username=username)
+        folders = Folder.objects.select_related().filter(user=user)
+        for folder in folders:
+            files = File.objects.select_related().filter(folder=folder)
+            for file in files:
+                s = requests.session()
+                url = file.media_file.url
+                fu = open("urls.txt")
+                ip = ""
+                for line in fu:
+                    for word in line.split():
+                        ip = word
+                        break
+                    break
+                url1 = "http://" + ip + url
+                r = s.get(url1)
+                out = open("temp.enc", "wb")
+                out.write(r.content)
+                out.close()
+                f1 = open("pass.txt", 'r')
+                schema = []
+                for line in f1:
+                    for word in line.split():
+                        schema.append(word)
+                        break
+                if schema[0] == "AES-CBC":
+                    key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                    e_d.decrypt_file_aes(key, "temp.enc", "temp1.dec")
+                elif schema[0] == "AES-ECB":
+                    key = hashlib.sha256(schema[1].encode('utf-8')).digest()
+                    e_d.decrypt_file_aes1(key, "temp.enc", "temp1.dec")
+                elif schema[0] == "RSA":
+                    # encrypt_file_rsa()
+                    print("not implemented")
+                if new_schema == "AES-CBC":
+                    new_key1 = str(new_key)
+                    new_key1 = hashlib.sha256(new_key1.encode('utf-8')).digest()
+                    e_d.encrypt_file_aes(new_key1, "temp1.dec", "temp3.enc")
+                elif new_schema == "AES-ECB":
+                    new_key1 = str(new_key)
+                    new_key1 = hashlib.sha256(new_key1.encode('utf-8')).digest()
+                    e_d.encrypt_file_aes1(new_key1, "temp1.dec", "temp3.enc")
+                elif new_schema == "RSA":
+                    new_key1 = str(new_key)
+                    new_key1 = hashlib.sha256(new_key1.encode('utf-8')).digest()
+                    e_d.encrypt_file_rsa(new_key1, "temp1.dec", "temp3.enc")
+                up_file1 = open("temp3.enc", "rb")
+                up_file = file1(up_file1)
+                f = File()
+                f.name = file.name
+                f.folder = folder
+                f.media_file.save(os.path.basename(file.name), up_file, save=True)
+                f.md5sum = md5("temp1.dec")
+                f.save()
+                file.delete()
+                os.remove("temp.enc")
+                os.remove("temp1.dec")
+                os.remove("temp3.enc")
+
+        return Response([{"status": "successful"}])
+
 
