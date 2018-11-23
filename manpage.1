@@ -1,0 +1,84 @@
+.TH SPC
+.SH NAME 
+spc \- base command for using SPC 
+.SH SYNOPSIS
+.B spc 
+[\fIOPTIONS\fR] ...
+.SH DESCRIPTION
+.B spc 
+is the base command for accessing the features of Secure Personal Cloud. 
+[\fIOPTIONS\fR] specify the function/feature for spc. spc takes one option at a time except in case of \'en\-de\'.
+.SH OPTIONS
+.SS Generic Program Information
+.TP 
+.BR info 
+Output the manual for spc.
+.BR version
+Output the version number of spc.
+.SS Function Selection
+.TP
+.BR set-url
+Set the api-urls to refer to server by taking ip address and port number as input from command line.
+Input format should be ip:port
+e.g :- 127.0.0.1:8000
+.TP  
+.BR signup
+Create a new account for user by asking required information as input.
+.TP
+.BR	login
+Log in a user into the database by asking his username and password as input.  		
+.TP
+.BR logout
+Log out the already logged in user. Prints "no user logged in" if there is no active login.
+.TP
+.BR config
+Configure the locally stored user login data.
+.TP
+.BR	show_data
+Display the user's files and folders in a heirarchical manner along with their ids.
+.TP
+.BR	upload_file
+Upload a file preset locally to the server's database by taking id of the parent folder in server, name of the file(which is being uploaded) shown in the server, path of the file in local machine as input. 
+.TP
+.BR	upload_folder
+Upload a folder present locally to the server's database by taking id of the parent folder in server, path of the folder in local machine("/" is necessary at the end of the folder path).
+.TP
+.BR	download_file
+Download a file belonging to the user present in the server's database by taking file id and path to download into as input.
+.TP
+.BR	download_folder
+Download a folder belonging to the user present in the server's database by taking folder id and path to download into as input.     	  
+.TP
+.BR	delete_file
+Delete a file belonging to the user present in the server's database by taking file id as input. 
+.TP
+.BR	delete_folder
+Delete a folder belonging to the user present in the server's database by taking folder id as input.
+.TP
+.BR en-de [\fIOPTIONS\fR]
+.SS [\fIOPTIONS\fR FOR en_de]
+.TP
+.BR list
+List the available encryption schemes.
+.TP
+.BR update
+Update the current encryption scheme by taking type of the schema and its corresponding keys as input. 
+.TP
+.BR	update [\fIFILEPATH\fR]
+Update the current encryption scheme from a local file specified by [\fIFILEPATH\fR].	
+.TP
+.BR dump [\fIFILEPATH\fR]
+Write the current encryption scheme into a local file specified by [\fIFILEPATH\fR].
+.TP
+.BR	observe
+Observe a local directory for synchronization by taking the direcory path as input.                            		
+.TP
+.BR	sync
+Synchronize the observed directory with the one present in the server's database.
+There are two options available '1' and '2'. Option '1' merges the observed local directory with the one in the server and same happens for the one in the server too. Option '2' overwrites the copy in server with the local observed directory.
+.TP
+.BR	status
+Print the status of the observed directory.		 			
+
+
+
