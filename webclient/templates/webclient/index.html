@@ -97,6 +97,29 @@ function IdleTimeout() {
 }
 </script> -->
 
+<style>
+.tile {
+    display: block;
+    position: relative;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    padding: 10px;
+    z-index: 1;
+}
+
+.tile1 {
+    text-align: center;
+    display: block;
+    position: relative;
+    background-color: #39ac39;
+    min-width: 160px;
+    padding: 10px;
+    z-index: 1;
+    color: #ffffff;
+}
+
+.tile:hover {background-color: #ddd;} 
+</style>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo01" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,40 +155,26 @@ function IdleTimeout() {
   </div>
 </nav>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 {% if all_folders %}
-    <h3>Current working directory id-({{ folder_id }})</h3>
-    <h4>Folders(folder-id)</h4>
+    <div class="tile1"><h3>Current working directory id-({{ folder_id }})</h3></div>
+    <div class="tile1"><h4>Folders(folder-id)</h4></div>
     <ul>
         {%  for folder in all_folders %}
-            <li><a href="{% url 'webclient:detail' folder.id %}">{{ folder.name }}({{folder.id}})</a> </li>
+            <li><div class="tile"><a href="{% url 'webclient:detail' folder.id %}">{{ folder.name }}({{folder.id}})</a></div></li>
         {% endfor %}
     </ul>
 {% else %}
-    <h3>hii</h3>
-    <h3>No Folders</h3>
+    <div class="tile"><h5>(No Folders here yet!)</h5></div>
 {% endif %}
-<h4>Files</h4>
+<div class="tile1"><h4>Files</h4></div>
 {% if files %}
 <ul>
     {%  for fold in files%}
-            <li><a href="{{ fold.media_file.url }}">{{ fold.name }}({{fold.id}})</a> </li>
+            <li><div class="tile"><a href="{{ fold.media_file.url }}">{{ fold.name }}({{fold.id}})</a></div></li>
         {% endfor %}
 
 </ul>
 {% else %}
-<h4>hii</h4>
+<div class="tile"><h5>(No files here yet!)</h5></div>
 {% endif %}
 </body>
