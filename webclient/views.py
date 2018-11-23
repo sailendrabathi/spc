@@ -317,7 +317,7 @@ def UF(folder,id,name,user):
                 e_d.encrypt_file_aes1(key, ele, "up_file.enc")
             elif schema[0] == "AES-OFB":
                 key = hashlib.sha256(schema[1].encode('utf-8')).digest()
-                e_d.encrypt_file_aes2(key, file, "up_file.enc")
+                e_d.encrypt_file_aes2(key, ele, "up_file.enc")
             up_file1 = open("up_file.enc","rb")
             up_file = file1(up_file1)
             f=File()
@@ -530,9 +530,9 @@ class folderdownloadapi(APIView):
         else:
             return Response([{"status":"no_folder"}])
 
-
+next=Condition()
 def __sync1__(a,b):
-    next=Condition()
+    # next=Condition()
     username = ""
     f = open("user.txt")
     for line in f:
@@ -562,12 +562,12 @@ def __sync1__(a,b):
         if dirs1:
             if fold.name in dirs1:
                 __sync1__(fold,b+fold.name+"/")
-                dirs.remove(fold)
+                dirs1.remove(fold.name)
             else :
 
                 r = s.post(apidownloadfolder, data={'folder': fold.id,'path':b})
         else:
-            s.post(apidownloadfolder, data={'folder': fold.id,'path':b})
+            r=s.post(apidownloadfolder, data={'folder': fold.id,'path':b})
     if dirs1:
         for f1 in dirs1:
             r=s.post(apiuploadfolder,data={'ftu':b+f1+"/",'folder':a.id,'name':f1,'user':user})
@@ -577,22 +577,25 @@ def __sync1__(a,b):
                 if file.md5sum==md5(os.path.join(b,file.name)):
                     dirs2.remove(file.name)
                     continue
-            else :
-                r=s.post(apideletefile,data={'file':file.id})
-                r=s.post(apiuploadfile,data={'file':os.path.join(b,file.name),'folder':a.id,'name':file.name})
-                dirs2.remove(file.name)
+                else :
+                    r=s.post(apideletefile,data={'file':file.id})
+                    r=s.post(apiuploadfile,data={'file':b+file.name,'folder':a.id,'name':file.name})
+                    dirs2.remove(file.name)
+            else:
+                r=s.post(apidownloadfile,data={'file':file.id,'path':b})
         else:
-            r=s.post(apidownloadfile,data={'file':file.id,'path':b})
+            r = s.post(apidownloadfile, data={'file': file.id, 'path': b})
     if dirs2:
         for f2 in dirs2:
             r=s.post(apiuploadfile, data={'file': b+f2, 'folder': a.id, 'name': f2})
     a.var=0
     a.save()
+    next.notify()
     next.release()
-
+    return 0
 
 def __sync2__(a, b):
-    next=Condition()
+    # next=Condition()
     username = ""
     f = open("user.txt")
     for line in f:
@@ -646,6 +649,7 @@ def __sync2__(a, b):
             s.post(apiuploadfile, data={'file': os.path.join(b, f2), 'folder': a.id, 'name': f2})
     a.var = 0
     a.save()
+    next.notify()
     next.release()
 
 

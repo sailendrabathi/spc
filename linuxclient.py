@@ -335,27 +335,8 @@ elif args.delete_folder:
 
 elif args.sync:
     if checkauth("user.txt"):
-        if os.path.isfile("dir_path.txt"):
-            folder = ""
-            fr = open("dir_path.txt", 'r')
-            for line in fr:
-                for word in line.split():
-                    folder = word
-                    break
-                break
-            f1 = input("sync with folder id: ")
-            option = input("Choose a option(1 or 2) 1.Merge 2.Overwrite: ")
-            if option == "1" or option == "2":
-                print("syncing...")
-                r = s.post(apisync, data={'folder': folder, 'f': f1, 'option': option})
-                j = r.json()
-                if j[0]['status'] == "successful":
-                    print("sync completed")
-                else:
-                    print("sync failed, please try again")
-            else:
-                print("Invalid option")
-        else:
+        ask=input("Enter directory manually or import from observed directory?(Y/n) ")
+        if ask=='Y' or ask=='y':
             folder = input("enter path of the directory to sync(add '/' at the end): ")
             f1 = input("sync with folder id: ")
             option = input("Choose a option(1 or 2) 1.Merge 2.Overwrite: ")
@@ -370,7 +351,46 @@ elif args.sync:
                 else:
                     print("sync failed, please try again")
             else:
-                print("Invalid option")
+                print("Invalid option, choose between (1/2)")
+        elif ask=='N' or ask=='n':
+            if os.path.isfile("dir_path.txt"):
+                folder = ""
+                fr = open("dir_path.txt", 'r')
+                for line in fr:
+                    for word in line.split():
+                        folder = word
+                        break
+                    break
+                f1 = input("sync with folder id: ")
+                option = input("Choose a option(1 or 2) 1.Merge 2.Overwrite: ")
+                if option == "1" or option == "2":
+                    print("syncing...")
+                    r = s.post(apisync, data={'folder': folder, 'f': f1, 'option': option})
+                    j = r.json()
+                    if j[0]['status'] == "successful":
+                        print("sync completed")
+                    else:
+                        print("sync failed, please try again")
+                else:
+                    print("Invalid option, choose between (1/2)")
+            else:
+                folder = input("enter path of the directory to sync(add '/' at the end): ")
+                f1 = input("sync with folder id: ")
+                option = input("Choose a option(1 or 2) 1.Merge 2.Overwrite: ")
+                if option == "1" or option == "2":
+                    print("syncing...")
+                    r = s.post(apisync, data={'folder': folder, 'f': f1, 'option': option})
+                    j = r.json()
+                    if j[0]['status'] == "successful":
+                        fr = open("dir_path.txt", 'w')
+                        fr.write(folder)
+                        print("sync completed")
+                    else:
+                        print("sync failed, please try again")
+                else:
+                    print("Invalid option, choose between (1/2)")
+        else:
+            print("Invalid option, choose between (Y/n)")
     else:
         print("no user logged in, please login!")
 
